@@ -28,6 +28,27 @@ export const Stats = IDL.Record({
   'totalCount' : IDL.Nat,
   'recentCount' : IDL.Nat,
 });
+export const Tool = IDL.Record({
+  'id' : IDL.Nat,
+  'emoji' : IDL.Text,
+  'name' : IDL.Text,
+  'kurzbeschreibung' : IDL.Text,
+  'zielgruppe' : IDL.Text,
+  'affiliateLink' : IDL.Opt(IDL.Text),
+  'fallbackLink' : IDL.Text,
+  'reihenfolge' : IDL.Nat,
+  'isPublic' : IDL.Bool,
+});
+export const CreateToolArgs = IDL.Record({
+  'emoji' : IDL.Text,
+  'name' : IDL.Text,
+  'kurzbeschreibung' : IDL.Text,
+  'zielgruppe' : IDL.Text,
+  'affiliateLink' : IDL.Opt(IDL.Text),
+  'fallbackLink' : IDL.Text,
+  'reihenfolge' : IDL.Nat,
+  'isPublic' : IDL.Bool,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -58,6 +79,11 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'getPublicTools' : IDL.Func([], [IDL.Vec(Tool)], ['query']),
+  'getAllToolsAdmin' : IDL.Func([], [IDL.Vec(Tool)], ['query']),
+  'createTool' : IDL.Func([CreateToolArgs], [IDL.Nat], []),
+  'updateTool' : IDL.Func([IDL.Nat, CreateToolArgs], [IDL.Bool], []),
+  'deleteTool' : IDL.Func([IDL.Nat], [IDL.Bool], []),
 });
 
 export const idlFactory = ({ IDL: _IDL }) => {

@@ -8,7 +8,6 @@ import {
 import Admin from "./pages/Admin";
 import GeneratorPage from "./pages/GeneratorPage";
 import Landing from "./pages/Landing";
-import ToolsPage from "./pages/ToolsPage";
 
 const rootRoute = createRootRoute();
 
@@ -30,17 +29,10 @@ const generatorRoute = createRoute({
   component: GeneratorPage,
 });
 
-const toolsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/tools",
-  component: ToolsPage,
-});
-
 const routeTree = rootRoute.addChildren([
   landingRoute,
   adminRoute,
   generatorRoute,
-  toolsRoute,
 ]);
 
 const router = createRouter({ routeTree });

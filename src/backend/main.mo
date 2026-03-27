@@ -50,7 +50,7 @@ actor {
     recentCount : Nat;
   };
 
-  // ===== New Simple Tool Type =====
+  // ===== Simple Tool Type =====
   public type Tool = {
     id : Nat;
     emoji : Text;
@@ -80,31 +80,6 @@ actor {
 
   stable let simpleTools = Map.empty<Nat, Tool>();
   stable var nextSimpleToolId : Nat = 0;
-
-
-  // Seed initial tools on fresh install (runs in actor body on first deploy)
-  if (nextSimpleToolId == 0) {
-    let _initialTools : [(Text, Text, Text, Text, Text, Nat)] = [
-      ("🎨", "Canva Design Tool", "Erstelle professionelle Designs für Social Media, Webseiten und Marketing – ganz ohne Vorkenntnisse.", "Designer, Marketer, Content Creator", "https://www.canva.com", 1),
-      ("🎤", "ElevenLabs KI Audio & Stimmen", "Erstelle realistische KI-Stimmen und hochwertige Audio-Inhalte für Videos, Podcasts und Content.", "Content Creator, YouTuber, Blogger, Marketer", "https://www.elevenlabs.io", 2),
-      ("🎬", "InVideo Video Maker", "Erstelle professionelle Videos in wenigen Minuten mit Vorlagen und KI-Unterstützung.", "Content Creator, Marketer, Unternehmer", "https://invideo.io", 3),
-    ];
-    for ((emoji_, name_, kurzbeschreibung_, zielgruppe_, fallbackLink_, reihenfolge_) in _initialTools.values()) {
-      let tool_ : Tool = {
-        id = nextSimpleToolId;
-        emoji = emoji_;
-        name = name_;
-        kurzbeschreibung = kurzbeschreibung_;
-        zielgruppe = zielgruppe_;
-        affiliateLink = null;
-        fallbackLink = fallbackLink_;
-        reihenfolge = reihenfolge_;
-        isPublic = true;
-      };
-      simpleTools.add(nextSimpleToolId, tool_);
-      nextSimpleToolId += 1;
-    };
-  };
 
   // ===== Content Functions =====
   public shared ({ caller }) func saveContent(
@@ -211,6 +186,18 @@ actor {
   };
 
   // ===== Tool Functions =====
+  // Reads: public, no auth needed (admin page protected by frontend login)
+  public query func getPublicTools() : async [Tool] {
+    simpleTools.values()
+      .filter(func(t : Tool) : Bool { t.isPublic })
+      .toArray();
+  };
+
+  public query func getAllToolsAdmin() : async [Tool] {
+    simpleTools.values().toArray();
+  };
+
+  // Writes: require login
   public shared ({ caller }) func createTool(args : CreateToolArgs) : async Nat {
     if (caller.isAnonymous()) { Runtime.trap("Not authenticated") };
     let tool : Tool = {
@@ -257,45 +244,6 @@ actor {
     switch (simpleTools.get(id)) {
       case (null) { false };
       case (?_) { simpleTools.remove(id); true };
-    };
-  };
-
-  // Public: no auth required – same data, filtered to isPublic
-  public query func getPublicTools() : async [Tool] {
-    simpleTools.values()
-      .filter(func(t : Tool) : Bool { t.isPublic })
-      .toArray();
-  };
-
-  // Admin list: no auth required at backend level.
-  // The admin page is already protected by frontend login.
-  // Removing the anonymous check prevents silent failures from auth timing.
-  public query func getAllToolsAdmin() : async [Tool] {
-    simpleTools.values().toArray();
-  };
-
-  system func postupgrade() {
-    if (nextSimpleToolId == 0) {
-      let initialTools : [(Text, Text, Text, Text, Text, Nat)] = [
-        ("🎨", "Canva Design Tool", "Erstelle professionelle Designs für Social Media, Webseiten und Marketing – ganz ohne Vorkenntnisse.", "Designer, Marketer, Content Creator", "https://www.canva.com", 1),
-        ("🎤", "ElevenLabs KI Audio & Stimmen", "Erstelle realistische KI-Stimmen und hochwertige Audio-Inhalte für Videos, Podcasts und Content.", "Content Creator, YouTuber, Blogger, Marketer", "https://www.elevenlabs.io", 2),
-        ("🎬", "InVideo Video Maker", "Erstelle professionelle Videos in wenigen Minuten mit Vorlagen und KI-Unterstützung.", "Content Creator, Marketer, Unternehmer", "https://invideo.io", 3),
-      ];
-      for ((emoji, name, kurzbeschreibung, zielgruppe, fallbackLink, reihenfolge) in initialTools.values()) {
-        let tool : Tool = {
-          id = nextSimpleToolId;
-          emoji = emoji;
-          name = name;
-          kurzbeschreibung = kurzbeschreibung;
-          zielgruppe = zielgruppe;
-          affiliateLink = null;
-          fallbackLink = fallbackLink;
-          reihenfolge = reihenfolge;
-          isPublic = true;
-        };
-        simpleTools.add(nextSimpleToolId, tool);
-        nextSimpleToolId += 1;
-      };
     };
   };
 };

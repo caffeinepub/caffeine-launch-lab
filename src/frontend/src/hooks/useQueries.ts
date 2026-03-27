@@ -112,36 +112,58 @@ export function useIsAdmin() {
   });
 }
 
-import { createActorWithConfig } from "../config";
-// ── Tool hooks ──────────────────────────────────────────────────────────────
-import type { CreateToolArgs, Tool } from "../declarations/backend.did.d.ts";
+// ---- Tool hooks ----
 
-// Use anonymous actor – getPublicTools / getAllToolsAdmin are public queries
+export interface Tool {
+  id: bigint;
+  emoji: string;
+  name: string;
+  kurzbeschreibung: string;
+  zielgruppe: string;
+  affiliateLink: [] | [string];
+  fallbackLink: string;
+  reihenfolge: bigint;
+  isPublic: boolean;
+}
+
+export interface CreateToolArgs {
+  emoji: string;
+  name: string;
+  kurzbeschreibung: string;
+  zielgruppe: string;
+  affiliateLink: [] | [string];
+  fallbackLink: string;
+  reihenfolge: bigint;
+  isPublic: boolean;
+}
+
+import { useAnonActor } from "./useAnonActor";
+
 export function usePublicTools() {
+  const { anonActor } = useAnonActor();
   return useQuery<Tool[]>({
     queryKey: ["publicTools"],
     queryFn: async () => {
-      const actor = await createActorWithConfig();
-      const result = (await (actor as any).getPublicTools()) as Array<any>;
-      return [...result].sort(
-        (a, b) => Number(a.reihenfolge) - Number(b.reihenfolge),
-      );
+      if (!anonActor) return [];
+      const result = await (anonActor as any).getPublicTools();
+      return Array.isArray(result) ? result : [];
     },
-    staleTime: 30_000,
+    enabled: !!anonActor,
   });
 }
 
 export function useAllToolsAdmin() {
+  const { anonActor } = useAnonActor();
   return useQuery<Tool[]>({
     queryKey: ["allToolsAdmin"],
     queryFn: async () => {
-      const actor = await createActorWithConfig();
-      const result = (await (actor as any).getAllToolsAdmin()) as Array<any>;
-      return [...result].sort(
-        (a, b) => Number(a.reihenfolge) - Number(b.reihenfolge),
-      );
+      if (!anonActor) return [];
+      const result = await (anonActor as any).getAllToolsAdmin();
+      return Array.isArray(result) ? result : [];
     },
-    staleTime: 0,
+    enabled: !!anonActor,
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 

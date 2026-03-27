@@ -13,12 +13,13 @@ import {
   Menu,
   Rocket,
   Share2,
+  Users,
   X,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useMyHistory, usePublicTools } from "../hooks/useQueries";
+import { type Tool, useMyHistory, usePublicTools } from "../hooks/useQueries";
 import { useAuth } from "../lib/auth";
 import type { GeneratedContent } from "../lib/templates";
 
@@ -234,73 +235,6 @@ const suggestions: Suggestion[] = [
   },
 ];
 
-function PublicToolsSection() {
-  const { data: tools, isLoading } = usePublicTools();
-
-  if (isLoading || !tools || tools.length === 0) return null;
-
-  const getLink = (tool: {
-    affiliateLink: [] | [string];
-    fallbackLink: string;
-  }) =>
-    tool.affiliateLink.length > 0 ? tool.affiliateLink[0] : tool.fallbackLink;
-
-  return (
-    <section className="py-20 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(0,229,255,0.07)] border border-[rgba(0,229,255,0.2)] text-[#00e5ff] text-xs font-medium mb-3">
-              🛠️ Empfohlene Tools
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">
-              Empfohlene <span className="text-[#00e5ff]">Tools</span>
-            </h2>
-          </div>
-          <a
-            href="/tools"
-            data-ocid="tools.link"
-            className="text-sm text-[#00e5ff] hover:underline flex items-center gap-1"
-          >
-            Alle Tools ansehen <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {tools.slice(0, 6).map((tool, i) => (
-            <div
-              key={String(tool.id)}
-              data-ocid={`tools.item.${i + 1}`}
-              className="glow-card p-6 flex flex-col gap-4 hover:border-[rgba(0,229,255,0.4)] hover:shadow-[0_0_25px_rgba(0,229,255,0.1)] transition-all duration-300"
-            >
-              <div className="text-3xl">{tool.emoji}</div>
-              <div>
-                <h3 className="text-white font-bold text-sm mb-1">
-                  {tool.name}
-                </h3>
-                <p className="text-[#93a4b6] text-xs leading-relaxed">
-                  {tool.kurzbeschreibung}
-                </p>
-              </div>
-              <span className="inline-flex px-2.5 py-1 rounded-full text-xs border border-[rgba(0,229,255,0.25)] text-[#00e5ff] bg-[rgba(0,229,255,0.06)] self-start">
-                {tool.zielgruppe}
-              </span>
-              <a
-                href={getLink(tool)}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-ocid={`tools.primary_button.${i + 1}`}
-                className="glow-button mt-auto text-center px-4 py-2 rounded-lg text-sm font-bold text-[#0a0f1e]"
-              >
-                Jetzt starten →
-              </a>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function Landing() {
   const { isAuthenticated, login, logout, isLoggingIn, isLoginSuccess } =
     useAuth();
@@ -318,6 +252,7 @@ export default function Landing() {
   );
   const [activeSuggestion, setActiveSuggestion] = useState<number | null>(null);
   const { data: backendHistory } = useMyHistory();
+  const { data: publicTools = [] } = usePublicTools();
 
   const features = [
     {
@@ -383,13 +318,6 @@ export default function Landing() {
                 {item}
               </a>
             ))}
-            <a
-              href="/tools"
-              data-ocid="nav.link"
-              className="text-sm text-[#93a4b6] hover:text-white transition-colors"
-            >
-              Tools
-            </a>
           </nav>
 
           <a
@@ -461,13 +389,6 @@ export default function Landing() {
                 {item}
               </a>
             ))}
-            <a
-              href="/tools"
-              className="block text-sm text-[#93a4b6] hover:text-white"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Tools
-            </a>
 
             {isAuthenticated && (
               <a
@@ -637,6 +558,75 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* AI TOOLS SECTION */}
+      {publicTools.length > 0 && (
+        <section id="tools" className="py-20 px-4">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl font-bold text-white mb-3">
+                Empfohlene Tools
+              </h2>
+              <p className="text-[#93a4b6]">
+                Die besten Tools für deinen Erfolg – sorgfältig ausgewählt.
+              </p>
+            </motion.div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[...publicTools]
+                .sort((a, b) => Number(a.reihenfolge) - Number(b.reihenfolge))
+                .map((tool: Tool, idx: number) => {
+                  const href =
+                    tool.affiliateLink.length > 0 && tool.affiliateLink[0]
+                      ? tool.affiliateLink[0]
+                      : tool.fallbackLink;
+                  return (
+                    <motion.div
+                      key={String(tool.id)}
+                      data-ocid={`tools.card.${idx + 1}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.08, duration: 0.4 }}
+                      className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.12)] rounded-2xl p-6 flex flex-col gap-4 hover:border-[rgba(0,229,255,0.3)] hover:shadow-[0_0_25px_rgba(0,229,255,0.08)] transition-all duration-300"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-[rgba(0,229,255,0.12)] flex items-center justify-center text-2xl flex-shrink-0">
+                        {tool.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-bold text-base mb-2">
+                          {tool.name}
+                        </h3>
+                        <p className="text-[#93a4b6] text-sm leading-relaxed mb-3">
+                          {tool.kurzbeschreibung}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[#00e5ff] text-xs">
+                          <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{tool.zielgruppe}</span>
+                        </div>
+                      </div>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-ocid={`tools.link.${idx + 1}`}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00e5ff] text-[#060d1a] font-bold text-sm hover:bg-[#00b8cc] transition-colors"
+                      >
+                        Jetzt starten
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </motion.div>
+                  );
+                })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FEATURES */}
       <section id="features" className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
@@ -803,9 +793,6 @@ export default function Landing() {
           </div>
         </section>
       )}
-
-      {/* TOOLS SECTION */}
-      <PublicToolsSection />
 
       {/* FOOTER */}
       <footer className="border-t border-[rgba(0,229,255,0.08)] py-10 px-4">

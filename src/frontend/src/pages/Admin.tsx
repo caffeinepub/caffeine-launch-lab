@@ -1,13 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   BarChart2,
   CheckSquare,
@@ -40,8 +31,9 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import type { ContentRecord } from "../backend";
-import type { CreateToolArgs, Tool } from "../declarations/backend.did.d.ts";
 import {
+  type CreateToolArgs,
+  type Tool,
   useAllHistory,
   useAllToolsAdmin,
   useBulkDelete,
@@ -129,86 +121,87 @@ function SectionCard({
   );
 }
 
-// ── Tool-Verwaltung component ──────────────────────────────────────────────
 function ToolVerwaltung() {
-  const { data: tools, isLoading } = useAllToolsAdmin();
+  const { data: tools = [], isLoading, isError } = useAllToolsAdmin();
   const createTool = useCreateTool();
   const updateTool = useUpdateTool();
   const deleteTool = useDeleteTool();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<bigint | null>(null);
 
-  const emptyForm = {
+  const emptyForm: CreateToolArgs = {
     emoji: "",
     name: "",
     kurzbeschreibung: "",
     zielgruppe: "",
-    affiliateLink: "",
+    affiliateLink: [],
     fallbackLink: "",
-    reihenfolge: 1,
+    reihenfolge: BigInt(0),
     isPublic: true,
   };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<CreateToolArgs>(emptyForm);
+  const [affiliateLinkInput, setAffiliateLinkInput] = useState("");
+  const [reihenfolgeInput, setReihenfolgeInput] = useState("0");
 
-  const openCreate = () => {
+  function openCreate() {
     setEditingTool(null);
     setForm(emptyForm);
-    setModalOpen(true);
-  };
+    setAffiliateLinkInput("");
+    setReihenfolgeInput("0");
+    setShowModal(true);
+  }
 
-  const openEdit = (tool: Tool) => {
+  function openEdit(tool: Tool) {
     setEditingTool(tool);
+    const af = tool.affiliateLink.length > 0 ? tool.affiliateLink[0] : "";
+    setAffiliateLinkInput(af ?? "");
+    setReihenfolgeInput(String(tool.reihenfolge));
     setForm({
       emoji: tool.emoji,
       name: tool.name,
       kurzbeschreibung: tool.kurzbeschreibung,
       zielgruppe: tool.zielgruppe,
-      affiliateLink:
-        tool.affiliateLink.length > 0 ? (tool.affiliateLink[0] ?? "") : "",
+      affiliateLink: tool.affiliateLink,
       fallbackLink: tool.fallbackLink,
-      reihenfolge: Number(tool.reihenfolge),
+      reihenfolge: tool.reihenfolge,
       isPublic: tool.isPublic,
     });
-    setModalOpen(true);
-  };
+    setShowModal(true);
+  }
 
-  const handleSave = async () => {
+  async function handleSave() {
     const args: CreateToolArgs = {
-      emoji: form.emoji,
-      name: form.name,
-      kurzbeschreibung: form.kurzbeschreibung,
-      zielgruppe: form.zielgruppe,
-      affiliateLink: form.affiliateLink.trim()
-        ? [form.affiliateLink.trim()]
+      ...form,
+      affiliateLink: affiliateLinkInput.trim()
+        ? [affiliateLinkInput.trim()]
         : [],
-      fallbackLink: form.fallbackLink,
-      reihenfolge: BigInt(form.reihenfolge),
-      isPublic: form.isPublic,
+      reihenfolge: BigInt(Number.parseInt(reihenfolgeInput, 10) || 0),
     };
     try {
       if (editingTool) {
         await updateTool.mutateAsync({ id: editingTool.id, args });
-        toast.success("Tool aktualisiert!");
+        toast.success("Tool aktualisiert");
       } else {
         await createTool.mutateAsync(args);
-        toast.success("Tool erstellt!");
+        toast.success("Tool erstellt");
       }
-      setModalOpen(false);
-    } catch {
-      toast.error("Fehler beim Speichern.");
+      setShowModal(false);
+    } catch (e) {
+      toast.error(`Fehler beim Speichern: ${String(e)}`);
     }
-  };
+  }
 
-  const handleDelete = async (id: bigint) => {
-    if (!window.confirm("Tool wirklich löschen?")) return;
+  async function handleDelete(id: bigint) {
     try {
       await deleteTool.mutateAsync(id);
-      toast.success("Tool gelöscht.");
-    } catch {
-      toast.error("Fehler beim Löschen.");
+      toast.success("Tool gelöscht");
+      setDeleteConfirm(null);
+    } catch (e) {
+      toast.error(`Fehler beim Löschen: ${String(e)}`);
     }
-  };
+  }
 
   const isSaving = createTool.isPending || updateTool.isPending;
 
@@ -224,280 +217,305 @@ function ToolVerwaltung() {
             Tool-Verwaltung
           </h1>
           <p className="text-[#93a4b6] text-sm">
-            Verwalte deine empfohlenen Affiliate-Tools.
+            Verwalte deine Tools für die öffentliche Webseite.
           </p>
         </div>
         <button
           type="button"
           data-ocid="tools.open_modal_button"
           onClick={openCreate}
-          className="glow-button px-4 py-2 rounded-lg text-sm font-semibold text-[#0a0f1e] flex items-center gap-2"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00e5ff] text-[#060d1a] font-bold text-sm hover:bg-[#00b8cc] transition-colors"
         >
-          <Wrench className="w-4 h-4" /> + Neues Tool
+          <span className="text-lg leading-none">+</span>
+          Neues Tool
         </button>
       </div>
 
       {isLoading && (
-        <div className="space-y-3" data-ocid="tools.loading_state">
-          {[1, 2, 3].map((i) => (
-            <Skeleton
-              key={i}
-              className="h-14 w-full rounded-lg bg-[rgba(0,229,255,0.06)]"
-            />
+        <div
+          data-ocid="tools.loading_state"
+          className="flex items-center gap-3 text-[#93a4b6] py-8"
+        >
+          <Loader2 className="w-5 h-5 animate-spin text-[#00e5ff]" />
+          <span>Tools werden geladen…</span>
+        </div>
+      )}
+
+      {isError && (
+        <div data-ocid="tools.error_state" className="text-red-400 py-4">
+          Fehler beim Laden der Tools. Bitte Seite neu laden.
+        </div>
+      )}
+
+      {!isLoading && !isError && tools.length === 0 && (
+        <div
+          data-ocid="tools.empty_state"
+          className="glow-card p-8 text-center text-[#93a4b6]"
+        >
+          Noch keine Tools. Erstelle dein erstes Tool mit dem Button oben
+          rechts.
+        </div>
+      )}
+
+      {!isLoading && tools.length > 0 && (
+        <div className="space-y-3" data-ocid="tools.list">
+          {tools.map((tool, idx) => (
+            <div
+              key={String(tool.id)}
+              data-ocid={`tools.item.${idx + 1}`}
+              className="glow-card p-4 flex items-center gap-4"
+            >
+              <span className="text-2xl w-10 text-center flex-shrink-0">
+                {tool.emoji}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-semibold">{tool.name}</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${tool.isPublic ? "bg-[rgba(0,229,255,0.15)] text-[#00e5ff]" : "bg-[rgba(255,255,255,0.08)] text-[#4a6070]"}`}
+                  >
+                    {tool.isPublic ? "Öffentlich" : "Privat"}
+                  </span>
+                </div>
+                <div className="text-[#93a4b6] text-xs mt-0.5">
+                  {tool.zielgruppe}
+                </div>
+                {tool.affiliateLink.length > 0 && (
+                  <div className="text-[#4a6070] text-xs mt-0.5 truncate">
+                    🔗 {tool.affiliateLink[0]}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  data-ocid={`tools.edit_button.${idx + 1}`}
+                  onClick={() => openEdit(tool)}
+                  className="p-2 rounded-lg text-[#93a4b6] hover:text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                {deleteConfirm === tool.id ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      data-ocid={`tools.confirm_button.${idx + 1}`}
+                      onClick={() => handleDelete(tool.id)}
+                      disabled={deleteTool.isPending}
+                      className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    >
+                      {deleteTool.isPending ? "…" : "Ja"}
+                    </button>
+                    <button
+                      type="button"
+                      data-ocid={`tools.cancel_button.${idx + 1}`}
+                      onClick={() => setDeleteConfirm(null)}
+                      className="px-2 py-1 rounded text-xs bg-[rgba(255,255,255,0.05)] text-[#93a4b6] hover:bg-[rgba(255,255,255,0.1)]"
+                    >
+                      Nein
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    data-ocid={`tools.delete_button.${idx + 1}`}
+                    onClick={() => setDeleteConfirm(tool.id)}
+                    className="p-2 rounded-lg text-[#93a4b6] hover:text-red-400 hover:bg-[rgba(255,0,0,0.08)] transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {!isLoading && (!tools || tools.length === 0) && (
-        <div
-          className="glow-card p-12 text-center"
-          data-ocid="tools.empty_state"
-        >
-          <p className="text-4xl mb-4">🛠️</p>
-          <p className="text-[#93a4b6] mb-4">
-            Noch keine Tools vorhanden. Erstelle dein erstes Tool.
-          </p>
-          <button
-            type="button"
-            data-ocid="tools.primary_button"
-            onClick={openCreate}
-            className="glow-button px-5 py-2.5 rounded-lg text-sm font-semibold text-[#0a0f1e]"
-          >
-            + Neues Tool
-          </button>
-        </div>
-      )}
-
-      {!isLoading && tools && tools.length > 0 && (
-        <div className="glow-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[rgba(0,229,255,0.1)] text-[#93a4b6]">
-                <th className="text-left px-4 py-3 font-medium">Name</th>
-                <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">
-                  Zielgruppe
-                </th>
-                <th className="text-left px-4 py-3 font-medium">Status</th>
-                <th className="text-left px-4 py-3 font-medium hidden md:table-cell">
-                  Affiliate
-                </th>
-                <th className="text-right px-4 py-3 font-medium">Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tools.map((tool, i) => (
-                <tr
-                  key={String(tool.id)}
-                  data-ocid={`tools.row.${i + 1}`}
-                  className="border-b border-[rgba(0,229,255,0.06)] hover:bg-[rgba(0,229,255,0.03)] transition-colors"
-                >
-                  <td className="px-4 py-3 text-white font-medium">
-                    <span className="mr-2">{tool.emoji}</span>
-                    {tool.name}
-                  </td>
-                  <td className="px-4 py-3 text-[#93a4b6] hidden sm:table-cell">
-                    {tool.zielgruppe}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium border ${tool.isPublic ? "border-[rgba(0,229,255,0.3)] text-[#00e5ff] bg-[rgba(0,229,255,0.08)]" : "border-[rgba(255,255,255,0.1)] text-[#4a6070] bg-[rgba(255,255,255,0.03)]"}`}
-                    >
-                      {tool.isPublic ? "Öffentlich" : "Privat"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-[#93a4b6] hidden md:table-cell">
-                    {tool.affiliateLink.length > 0 ? "✓" : "–"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        data-ocid={`tools.edit_button.${i + 1}`}
-                        onClick={() => openEdit(tool)}
-                        className="p-1.5 rounded-md text-[#93a4b6] hover:text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        data-ocid={`tools.delete_button.${i + 1}`}
-                        onClick={() => handleDelete(tool.id)}
-                        className="p-1.5 rounded-md text-[#93a4b6] hover:text-red-400 hover:bg-[rgba(255,80,80,0.08)] transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {/* Tool Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent
-          className="max-w-lg bg-[#0d1526] border border-[rgba(0,229,255,0.2)] text-white max-h-[90vh] overflow-y-auto"
-          data-ocid="tools.dialog"
-        >
-          <DialogHeader>
-            <DialogTitle className="text-[#00e5ff]">
-              {editingTool ? "Tool bearbeiten" : "Neues Tool"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-3">
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div
+            data-ocid="tools.modal"
+            className="bg-[#0d1526] border border-[rgba(0,229,255,0.2)] rounded-2xl w-full max-w-lg shadow-[0_0_40px_rgba(0,229,255,0.1)] max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between p-5 border-b border-[rgba(0,229,255,0.1)]">
+              <h2 className="text-white font-bold text-lg">
+                {editingTool ? "Tool bearbeiten" : "Neues Tool erstellen"}
+              </h2>
+              <button
+                type="button"
+                data-ocid="tools.close_button"
+                onClick={() => setShowModal(false)}
+                className="text-[#4a6070] hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
               <div>
-                <Label className="text-[#93a4b6] text-xs mb-1.5 block">
+                <label
+                  htmlFor="tool-emoji"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
                   Emoji
-                </Label>
+                </label>
                 <input
+                  id="tool-emoji"
                   data-ocid="tools.input"
+                  type="text"
                   value={form.emoji}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, emoji: e.target.value }))
                   }
-                  className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
                   placeholder="z.B. 🎨"
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
                 />
               </div>
               <div>
-                <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                  Reihenfolge
-                </Label>
+                <label
+                  htmlFor="tool-name"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Name *
+                </label>
                 <input
-                  type="number"
-                  data-ocid="tools.input"
-                  value={form.reihenfolge}
+                  id="tool-name"
+                  type="text"
+                  value={form.name}
                   onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      reihenfolge: Number(e.target.value),
-                    }))
+                    setForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
+                  placeholder="Tool-Name"
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
                 />
               </div>
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                Name *
-              </Label>
-              <input
-                data-ocid="tools.input"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
-                placeholder="Tool-Name"
-              />
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                Kurzbeschreibung
-              </Label>
-              <textarea
-                data-ocid="tools.textarea"
-                value={form.kurzbeschreibung}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, kurzbeschreibung: e.target.value }))
-                }
-                rows={2}
-                className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)] resize-none"
-                placeholder="Kurze Beschreibung des Tools"
-              />
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                Zielgruppe
-              </Label>
-              <input
-                data-ocid="tools.input"
-                value={form.zielgruppe}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, zielgruppe: e.target.value }))
-                }
-                className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
-                placeholder="z.B. Designer, Marketer"
-              />
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                Affiliate-Link{" "}
-                <span className="text-[#4a6070]">(optional)</span>
-              </Label>
-              <input
-                data-ocid="tools.input"
-                value={form.affiliateLink}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, affiliateLink: e.target.value }))
-                }
-                className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-1.5 block">
-                Fallback-Link *
-              </Label>
-              <input
-                data-ocid="tools.input"
-                value={form.fallbackLink}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, fallbackLink: e.target.value }))
-                }
-                className="w-full bg-[rgba(0,229,255,0.05)] border border-[rgba(0,229,255,0.15)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.4)]"
-                placeholder="https://..."
-              />
-            </div>
-            <div>
-              <Label className="text-[#93a4b6] text-xs mb-2 block">
-                Status
-              </Label>
-              <div className="flex gap-3">
+              <div>
+                <label
+                  htmlFor="tool-kurz"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Kurzbeschreibung *
+                </label>
+                <textarea
+                  id="tool-kurz"
+                  data-ocid="tools.textarea"
+                  value={form.kurzbeschreibung}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, kurzbeschreibung: e.target.value }))
+                  }
+                  placeholder="Kurze Beschreibung des Tools"
+                  rows={3}
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors resize-none"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="tool-ziel"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Zielgruppe *
+                </label>
+                <input
+                  id="tool-ziel"
+                  type="text"
+                  value={form.zielgruppe}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, zielgruppe: e.target.value }))
+                  }
+                  placeholder="z.B. Content Creator, Marketer"
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="tool-affiliate"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Affiliate-Link (optional)
+                </label>
+                <input
+                  id="tool-affiliate"
+                  type="url"
+                  value={affiliateLinkInput}
+                  onChange={(e) => setAffiliateLinkInput(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="tool-fallback"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Fallback-Link *
+                </label>
+                <input
+                  id="tool-fallback"
+                  type="url"
+                  value={form.fallbackLink}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, fallbackLink: e.target.value }))
+                  }
+                  placeholder="https://..."
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="tool-reihenfolge"
+                  className="block text-[#93a4b6] text-xs mb-1.5"
+                >
+                  Reihenfolge
+                </label>
+                <input
+                  id="tool-reihenfolge"
+                  type="number"
+                  value={reihenfolgeInput}
+                  onChange={(e) => setReihenfolgeInput(e.target.value)}
+                  className="w-full bg-[#060d1a] border border-[rgba(0,229,255,0.15)] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[rgba(0,229,255,0.5)] transition-colors"
+                />
+              </div>
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   data-ocid="tools.toggle"
-                  onClick={() => setForm((f) => ({ ...f, isPublic: true }))}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${form.isPublic ? "border-[rgba(0,229,255,0.4)] text-[#00e5ff] bg-[rgba(0,229,255,0.08)]" : "border-[rgba(255,255,255,0.1)] text-[#4a6070]"}`}
+                  onClick={() =>
+                    setForm((f) => ({ ...f, isPublic: !f.isPublic }))
+                  }
+                  className={`relative w-11 h-6 rounded-full transition-colors ${form.isPublic ? "bg-[#00e5ff]" : "bg-[#1a2a3a]"}`}
                 >
-                  Öffentlich
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.isPublic ? "translate-x-5" : "translate-x-0.5"}`}
+                  />
                 </button>
-                <button
-                  type="button"
-                  data-ocid="tools.toggle"
-                  onClick={() => setForm((f) => ({ ...f, isPublic: false }))}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${!form.isPublic ? "border-[rgba(255,255,255,0.3)] text-white bg-[rgba(255,255,255,0.06)]" : "border-[rgba(255,255,255,0.1)] text-[#4a6070]"}`}
-                >
-                  Privat
-                </button>
+                <span className="text-sm text-[#93a4b6]">
+                  {form.isPublic ? "Öffentlich" : "Privat"}
+                </span>
               </div>
             </div>
+            <div className="p-5 border-t border-[rgba(0,229,255,0.1)] flex gap-3 justify-end">
+              <button
+                type="button"
+                data-ocid="tools.cancel_button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-xl border border-[rgba(0,229,255,0.15)] text-[#93a4b6] text-sm hover:border-[rgba(0,229,255,0.3)] transition-colors"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                data-ocid="tools.submit_button"
+                onClick={handleSave}
+                disabled={isSaving || !form.name || !form.fallbackLink}
+                className="px-5 py-2 rounded-xl bg-[#00e5ff] text-[#060d1a] font-bold text-sm hover:bg-[#00b8cc] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {editingTool ? "Speichern" : "Erstellen"}
+              </button>
+            </div>
           </div>
-          <DialogFooter className="gap-2">
-            <button
-              type="button"
-              data-ocid="tools.cancel_button"
-              onClick={() => setModalOpen(false)}
-              className="px-4 py-2 rounded-lg text-sm text-[#93a4b6] border border-[rgba(255,255,255,0.1)] hover:border-[rgba(255,255,255,0.2)] transition-all"
-            >
-              Abbrechen
-            </button>
-            <button
-              type="button"
-              data-ocid="tools.save_button"
-              onClick={handleSave}
-              disabled={isSaving || !form.name || !form.fallbackLink}
-              className="glow-button px-5 py-2 rounded-lg text-sm font-semibold text-[#0a0f1e] disabled:opacity-50 flex items-center gap-2"
-            >
-              {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {editingTool ? "Speichern" : "Erstellen"}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -1188,7 +1206,6 @@ export default function Admin() {
               </div>
             </motion.div>
           )}
-
           {tab === "tools" && <ToolVerwaltung />}
         </div>
       </main>
