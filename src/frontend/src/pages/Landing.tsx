@@ -30,22 +30,6 @@ interface LocalHistory {
   timestamp: number;
 }
 
-function SparklesIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
-      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
-    </svg>
-  );
-}
-
 type StepItem = {
   num: string;
   tool: string;
@@ -431,64 +415,26 @@ export default function Landing() {
       </header>
 
       {/* HERO */}
-      <section className="pt-36 pb-24 px-4 text-center relative">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[rgba(0,229,255,0.07)] border border-[rgba(0,229,255,0.2)] text-[#00e5ff] text-xs font-medium mb-6">
-            <SparklesIcon size={12} /> KI-gestützte Content-Erstellung
-          </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white leading-tight mb-6">
-            Deine Idee. Deine App.
-            <br />
-            <span className="text-[#00e5ff] glow-text">Dein Einkommen.</span>
-          </h1>
-          <p className="text-lg text-[#93a4b6] max-w-xl mx-auto mb-10">
-            Caffeine AI baut deine App – in Minuten, ohne Code.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="https://caffeine.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-ocid="hero.primary_button"
-              className="glow-button inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-bold text-[#0a0f1e]"
-            >
-              Mit Caffeine starten <ChevronRight className="w-4 h-4" />
-            </a>
-            <a
-              href="/detail/caffeine"
-              data-ocid="hero.secondary_button"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold border border-[rgba(0,229,255,0.4)] text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
-            >
-              Mehr erfahren
-            </a>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* CAFFEINE MAIN PRODUCT SECTION */}
-      <section className="py-20 px-4 bg-gradient-to-b from-[rgba(0,229,255,0.04)] to-[rgba(0,229,255,0.01)] border-y border-[rgba(0,229,255,0.1)]">
+      <section className="pt-36 pb-24 px-4 relative">
         <div className="max-w-4xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="flex flex-col md:flex-row items-center gap-12"
           >
             <div className="flex-1 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(0,229,255,0.1)] border border-[rgba(0,229,255,0.3)] text-[#00e5ff] text-xs font-semibold mb-5">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[rgba(0,229,255,0.1)] border border-[rgba(0,229,255,0.3)] text-[#00e5ff] text-xs font-semibold mb-6">
                 <Rocket className="w-3.5 h-3.5" /> Das Hauptprodukt
               </div>
-              <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
-                Baue deine eigene App –{" "}
+              <h1 className="text-5xl sm:text-6xl font-black text-white leading-tight mb-5">
+                Baue mit Caffeine deine eigene App –{" "}
                 <span className="text-[#00e5ff] glow-text">ohne Code</span>
-              </h2>
-              <p className="text-[#93a4b6] text-lg leading-relaxed mb-8">
-                Erstelle komplette Webseiten, Tools und Business-Systeme mit KI.
+              </h1>
+              <p className="text-lg text-[#93a4b6] max-w-xl mb-8">
+                Erstelle Webseiten, Tools, KI-Workflows und digitale
+                Geschäftsmodelle in Minuten – einfach per Beschreibung statt
+                Programmierung.
               </p>
               <ul className="space-y-3 mb-10">
                 {caffeineFeatures.map((feat) => (
@@ -503,15 +449,25 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <a
-                href="https://caffeine.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-ocid="caffeine_main.cta_button"
-                className="glow-button inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-bold text-[#0a0f1e]"
-              >
-                Jetzt mit Caffeine starten <ChevronRight className="w-4 h-4" />
-              </a>
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
+                <a
+                  href="https://caffeine.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-ocid="hero.primary_button"
+                  className="glow-button inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-bold text-[#0a0f1e]"
+                >
+                  Jetzt mit Caffeine starten{" "}
+                  <ChevronRight className="w-4 h-4" />
+                </a>
+                <a
+                  href="/caffeine-info"
+                  data-ocid="hero.secondary_button"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold border border-[rgba(0,229,255,0.4)] text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
+                >
+                  Mehr über Caffeine erfahren
+                </a>
+              </div>
             </div>
             <div className="flex-shrink-0 w-full md:w-64">
               <div className="relative mx-auto w-56 md:w-full">

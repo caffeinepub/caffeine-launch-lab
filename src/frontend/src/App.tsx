@@ -6,6 +6,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import Admin from "./pages/Admin";
+import CaffeineInfoPage from "./pages/CaffeineInfoPage";
 import GeneratorPage from "./pages/GeneratorPage";
 import Landing from "./pages/Landing";
 
@@ -29,10 +30,17 @@ const generatorRoute = createRoute({
   component: GeneratorPage,
 });
 
+const caffeineInfoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/caffeine-info",
+  component: CaffeineInfoPage,
+});
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   adminRoute,
   generatorRoute,
+  caffeineInfoRoute,
 ]);
 
 const router = createRouter({ routeTree });
