@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Check,
   ChevronRight,
   Clock,
   Cpu,
@@ -235,6 +236,13 @@ const suggestions: Suggestion[] = [
   },
 ];
 
+const caffeineFeatures = [
+  "Webseiten erstellen",
+  "Tools & Apps bauen",
+  "Content generieren",
+  "Geld verdienen",
+];
+
 export default function Landing() {
   const { isAuthenticated, login, logout, isLoggingIn, isLoginSuccess } =
     useAuth();
@@ -461,6 +469,85 @@ export default function Landing() {
         </motion.div>
       </section>
 
+      {/* CAFFEINE MAIN PRODUCT SECTION */}
+      <section className="py-20 px-4 bg-gradient-to-b from-[rgba(0,229,255,0.04)] to-[rgba(0,229,255,0.01)] border-y border-[rgba(0,229,255,0.1)]">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col md:flex-row items-center gap-12"
+          >
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(0,229,255,0.1)] border border-[rgba(0,229,255,0.3)] text-[#00e5ff] text-xs font-semibold mb-5">
+                <Rocket className="w-3.5 h-3.5" /> Das Hauptprodukt
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
+                Baue deine eigene App –{" "}
+                <span className="text-[#00e5ff] glow-text">ohne Code</span>
+              </h2>
+              <p className="text-[#93a4b6] text-lg leading-relaxed mb-8">
+                Erstelle komplette Webseiten, Tools und Business-Systeme mit KI.
+              </p>
+              <ul className="space-y-3 mb-10">
+                {caffeineFeatures.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-center gap-3 justify-center md:justify-start"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-[rgba(0,229,255,0.15)] border border-[#00e5ff] flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#00e5ff]" />
+                    </span>
+                    <span className="text-white font-medium">{feat}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="https://caffeine.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-ocid="caffeine_main.cta_button"
+                className="glow-button inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-bold text-[#0a0f1e]"
+              >
+                Jetzt mit Caffeine starten <ChevronRight className="w-4 h-4" />
+              </a>
+            </div>
+            <div className="flex-shrink-0 w-full md:w-64">
+              <div className="relative mx-auto w-56 md:w-full">
+                <div className="absolute inset-0 rounded-2xl bg-[#00e5ff] opacity-10 blur-2xl" />
+                <div className="relative bg-[#0d1b2a] border border-[rgba(0,229,255,0.25)] rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-[rgba(0,229,255,0.15)] flex items-center justify-center">
+                      <Rocket className="w-4 h-4 text-[#00e5ff]" />
+                    </div>
+                    <span className="text-white font-bold text-sm">
+                      Caffeine AI
+                    </span>
+                  </div>
+                  {["App erstellt ✓", "Design fertig ✓", "Live in 2 Min ✓"].map(
+                    (line) => (
+                      <div
+                        key={line}
+                        className="flex items-center gap-2 text-sm text-[#93a4b6]"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] flex-shrink-0" />
+                        {line}
+                      </div>
+                    ),
+                  )}
+                  <div className="pt-2 border-t border-[rgba(0,229,255,0.1)]">
+                    <span className="text-[#00e5ff] text-xs font-semibold">
+                      Keine Kenntnisse nötig
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* INTERACTIVE FLOW SECTION */}
       <section className="py-20 px-4 bg-[rgba(0,229,255,0.02)]">
         <div className="max-w-5xl mx-auto">
@@ -557,75 +644,6 @@ export default function Landing() {
           </AnimatePresence>
         </div>
       </section>
-
-      {/* AI TOOLS SECTION */}
-      {publicTools.length > 0 && (
-        <section id="tools" className="py-20 px-4">
-          <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-12"
-            >
-              <h2 className="text-3xl font-bold text-white mb-3">
-                Empfohlene Tools
-              </h2>
-              <p className="text-[#93a4b6]">
-                Die besten Tools für deinen Erfolg – sorgfältig ausgewählt.
-              </p>
-            </motion.div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[...publicTools]
-                .sort((a, b) => Number(a.reihenfolge) - Number(b.reihenfolge))
-                .map((tool: Tool, idx: number) => {
-                  const href =
-                    tool.affiliateLink.length > 0 && tool.affiliateLink[0]
-                      ? tool.affiliateLink[0]
-                      : tool.fallbackLink;
-                  return (
-                    <motion.div
-                      key={String(tool.id)}
-                      data-ocid={`tools.card.${idx + 1}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: idx * 0.08, duration: 0.4 }}
-                      className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.12)] rounded-2xl p-6 flex flex-col gap-4 hover:border-[rgba(0,229,255,0.3)] hover:shadow-[0_0_25px_rgba(0,229,255,0.08)] transition-all duration-300"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-[rgba(0,229,255,0.12)] flex items-center justify-center text-2xl flex-shrink-0">
-                        {tool.emoji}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-white font-bold text-base mb-2">
-                          {tool.name}
-                        </h3>
-                        <p className="text-[#93a4b6] text-sm leading-relaxed mb-3">
-                          {tool.kurzbeschreibung}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-[#00e5ff] text-xs">
-                          <Users className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span>{tool.zielgruppe}</span>
-                        </div>
-                      </div>
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-ocid={`tools.link.${idx + 1}`}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00e5ff] text-[#060d1a] font-bold text-sm hover:bg-[#00b8cc] transition-colors"
-                      >
-                        Jetzt starten
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </motion.div>
-                  );
-                })}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* FEATURES */}
       <section id="features" className="py-20 px-4">
@@ -740,6 +758,75 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
+
+      {/* ADDITIONAL TOOLS SECTION */}
+      {publicTools.length > 0 && (
+        <section id="tools" className="py-20 px-4 bg-[rgba(0,229,255,0.02)]">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl font-bold text-white mb-3">
+                Zusätzliche Tools für dein Wachstum
+              </h2>
+              <p className="text-[#93a4b6]">
+                Ergänzende Tools, die deinen Workflow beschleunigen.
+              </p>
+            </motion.div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[...publicTools]
+                .sort((a, b) => Number(a.reihenfolge) - Number(b.reihenfolge))
+                .map((tool: Tool, idx: number) => {
+                  const href =
+                    tool.affiliateLink.length > 0 && tool.affiliateLink[0]
+                      ? tool.affiliateLink[0]
+                      : tool.fallbackLink;
+                  return (
+                    <motion.div
+                      key={String(tool.id)}
+                      data-ocid={`tools.card.${idx + 1}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.08, duration: 0.4 }}
+                      className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.12)] rounded-2xl p-6 flex flex-col gap-4 hover:border-[rgba(0,229,255,0.3)] hover:shadow-[0_0_25px_rgba(0,229,255,0.08)] transition-all duration-300"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-[rgba(0,229,255,0.12)] flex items-center justify-center text-2xl flex-shrink-0">
+                        {tool.emoji}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-white font-bold text-base mb-2">
+                          {tool.name}
+                        </h3>
+                        <p className="text-[#93a4b6] text-sm leading-relaxed mb-3">
+                          {tool.kurzbeschreibung}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[#00e5ff] text-xs">
+                          <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{tool.zielgruppe}</span>
+                        </div>
+                      </div>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-ocid={`tools.link.${idx + 1}`}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0d1b2a] border border-[rgba(0,229,255,0.25)] text-[#00e5ff] font-bold text-sm hover:bg-[rgba(0,229,255,0.08)] transition-colors"
+                      >
+                        Jetzt starten
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </motion.div>
+                  );
+                })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* HISTORY */}
       {displayHistory.length > 0 && (
