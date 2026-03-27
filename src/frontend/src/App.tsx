@@ -7,7 +7,10 @@ import {
 } from "@tanstack/react-router";
 import Admin from "./pages/Admin";
 import CaffeineInfoPage from "./pages/CaffeineInfoPage";
+import CanvaPage from "./pages/CanvaPage";
+import ElevenLabsPage from "./pages/ElevenLabsPage";
 import GeneratorPage from "./pages/GeneratorPage";
+import InVideoPage from "./pages/InVideoPage";
 import Landing from "./pages/Landing";
 
 const rootRoute = createRootRoute();
@@ -36,11 +39,32 @@ const caffeineInfoRoute = createRoute({
   component: CaffeineInfoPage,
 });
 
+const canvaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tool/canva",
+  component: CanvaPage,
+});
+
+const inVideoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tool/invideo",
+  component: InVideoPage,
+});
+
+const elevenLabsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/tool/elevenlabs",
+  component: ElevenLabsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   adminRoute,
   generatorRoute,
   caffeineInfoRoute,
+  canvaRoute,
+  inVideoRoute,
+  elevenLabsRoute,
 ]);
 
 const router = createRouter({ routeTree });
