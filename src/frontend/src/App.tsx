@@ -9,8 +9,10 @@ import AboutPage from "./pages/AboutPage";
 import Admin from "./pages/Admin";
 import CaffeineInfoPage from "./pages/CaffeineInfoPage";
 import CanvaPage from "./pages/CanvaPage";
+import DatenschutzPage from "./pages/DatenschutzPage";
 import ElevenLabsPage from "./pages/ElevenLabsPage";
 import GeneratorPage from "./pages/GeneratorPage";
+import ImpressumPage from "./pages/ImpressumPage";
 import InVideoPage from "./pages/InVideoPage";
 import Landing from "./pages/Landing";
 
@@ -64,6 +66,18 @@ const elevenLabsRoute = createRoute({
   component: ElevenLabsPage,
 });
 
+const impressumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/impressum",
+  component: ImpressumPage,
+});
+
+const datenschutzRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/datenschutz",
+  component: DatenschutzPage,
+});
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   adminRoute,
@@ -73,6 +87,8 @@ const routeTree = rootRoute.addChildren([
   canvaRoute,
   inVideoRoute,
   elevenLabsRoute,
+  impressumRoute,
+  datenschutzRoute,
 ]);
 
 const router = createRouter({ routeTree });

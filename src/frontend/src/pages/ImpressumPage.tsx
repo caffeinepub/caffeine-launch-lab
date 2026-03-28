@@ -1,7 +1,7 @@
-import { ChevronLeft, ChevronRight, Rocket, User } from "lucide-react";
+import { ChevronLeft, FileText, Rocket } from "lucide-react";
 import { motion } from "motion/react";
 
-export default function AboutPage() {
+export default function ImpressumPage() {
   return (
     <div className="min-h-screen bg-[#0b0f1a] text-white overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none constellation-bg" />
@@ -28,17 +28,17 @@ export default function AboutPage() {
       </header>
 
       {/* HERO */}
-      <section className="pt-32 pb-16 px-4 text-center">
+      <section className="pt-32 pb-12 px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[rgba(0,229,255,0.07)] border border-[rgba(0,229,255,0.2)] text-[#00e5ff] text-xs font-medium mb-6">
-            <User className="w-3.5 h-3.5" /> Die Person dahinter
+            <FileText className="w-3.5 h-3.5" /> Rechtliche Informationen
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
-            Über <span className="text-[#00e5ff] glow-text">uns</span>
+            <span className="text-[#00e5ff] glow-text">Impressum</span>
           </h1>
         </motion.div>
       </section>
@@ -50,49 +50,93 @@ export default function AboutPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.6 }}
-            className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.12)] rounded-2xl p-8 sm:p-10 space-y-6"
+            className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.12)] rounded-2xl p-8 sm:p-10 space-y-8"
           >
-            <p className="text-[#c8d8e8] leading-relaxed text-base sm:text-lg">
-              Ich bin Maria – und ich habe diese Plattform aufgebaut, um zu
-              zeigen, wie einfach es heute ist, mit KI ein eigenes Online
-              Business zu starten.
-            </p>
-            <p className="text-[#93a4b6] leading-relaxed">
-              Früher dachte ich, man braucht Programmierkenntnisse, viel Zeit
-              oder ein großes Budget. Doch durch Tools wie Caffeine AI und
-              andere moderne KI-Lösungen habe ich erkannt, dass man heute
-              innerhalb kürzester Zeit Webseiten, Apps und komplette Systeme
-              aufbauen kann.
-            </p>
-            <p className="text-[#93a4b6] leading-relaxed">
-              Genau dieses Wissen möchte ich hier weitergeben.
-            </p>
-            <p className="text-[#93a4b6] leading-relaxed">
-              Diese Seite zeigt dir die besten KI-Tools, Strategien und
-              Möglichkeiten, um dein eigenes Projekt aufzubauen – egal ob du
-              Anfänger bist oder bereits erste Erfahrungen hast.
-            </p>
-            <p className="text-[#93a4b6] leading-relaxed">
-              Mein Ziel ist es, dir einen einfachen Einstieg zu ermöglichen und
-              dir zu zeigen, wie du mit den richtigen Tools Zeit sparst und
-              gleichzeitig neue Einkommensmöglichkeiten erschließt.
-            </p>
-          </motion.div>
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Angaben gemäß § 5 TMG
+              </h2>
+              <p className="text-[#c8d8e8] leading-relaxed">
+                Maria Kleehammer
+                <br />
+                Eschenstraße 29/6
+                <br />
+                76437 Rastatt
+                <br />
+                Deutschland
+              </p>
+            </div>
 
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="mt-10 text-center"
-          >
-            <a
-              href="/"
-              data-ocid="about.cta_button"
-              className="glow-button inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-bold text-[#0a0f1e]"
-            >
-              Jetzt selbst starten <ChevronRight className="w-4 h-4" />
-            </a>
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Kontakt
+              </h2>
+              <p className="text-[#c8d8e8] leading-relaxed">
+                E-Mail:{" "}
+                <a
+                  href="mailto:kleehammer06@gmail.com"
+                  className="text-[#00e5ff] hover:underline"
+                >
+                  kleehammer06@gmail.com
+                </a>
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Umsatzsteuer-Identifikationsnummer
+              </h2>
+              <p className="text-[#93a4b6] text-sm mb-1">gemäß § 27a UStG:</p>
+              <p className="text-[#c8d8e8]">DE349862881</p>
+            </div>
+
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Verantwortlich für den Inhalt
+              </h2>
+              <p className="text-[#93a4b6] text-sm mb-2">
+                nach § 55 Abs. 2 RStV:
+              </p>
+              <p className="text-[#c8d8e8] leading-relaxed">
+                Maria Kleehammer
+                <br />
+                Eschenstraße 29/6
+                <br />
+                76437 Rastatt
+              </p>
+            </div>
+
+            <div className="border-t border-[rgba(0,229,255,0.08)] pt-6">
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Haftung für Inhalte
+              </h2>
+              <p className="text-[#93a4b6] leading-relaxed text-sm">
+                Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt.
+                Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte
+                können wir jedoch keine Gewähr übernehmen.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Haftung für Links
+              </h2>
+              <p className="text-[#93a4b6] leading-relaxed text-sm">
+                Diese Website enthält Links zu externen Webseiten Dritter, auf
+                deren Inhalte wir keinen Einfluss haben. Deshalb können wir für
+                diese fremden Inhalte auch keine Gewähr übernehmen.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-[#00e5ff] font-bold text-sm uppercase tracking-wider mb-3">
+                Urheberrecht
+              </h2>
+              <p className="text-[#93a4b6] leading-relaxed text-sm">
+                Die durch die Seitenbetreiber erstellten Inhalte und Werke auf
+                diesen Seiten unterliegen dem deutschen Urheberrecht.
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>

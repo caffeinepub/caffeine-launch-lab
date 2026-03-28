@@ -263,6 +263,21 @@ export default function CaffeineInfoPage() {
             <p className="text-[#4a6070] text-xs text-center">
               © 2026 AIToolsProX
             </p>
+            <div className="flex items-center justify-center gap-3 mt-2">
+              <a
+                href="/impressum"
+                className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
+              >
+                Impressum
+              </a>
+              <span className="text-[#4a6070] text-xs">|</span>
+              <a
+                href="/datenschutz"
+                className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
+              >
+                Datenschutz
+              </a>
+            </div>
           </div>
         </div>
       </footer>
