@@ -6,7 +6,6 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import AboutPage from "./pages/AboutPage";
 import Admin from "./pages/Admin";
 import CaffeineInfoPage from "./pages/CaffeineInfoPage";
@@ -24,6 +23,12 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Landing,
+});
+
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: Admin,
 });
 
 const generatorRoute = createRoute({
@@ -76,6 +81,7 @@ const datenschutzRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  adminRoute,
   generatorRoute,
   caffeineInfoRoute,
   aboutRoute,
@@ -95,39 +101,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
-function isAdminHash(hash: string): boolean {
-  return (
-    hash === "#/admin" ||
-    hash.startsWith("#/admin/") ||
-    hash.startsWith("#/admin?")
-  );
-}
-
 export default function App() {
-  const [showAdmin, setShowAdmin] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return (
-      isAdminHash(window.location.hash) || window.location.pathname === "/admin"
-    );
-  });
-
-  useEffect(() => {
-    const handler = () => {
-      setShowAdmin(isAdminHash(window.location.hash));
-    };
-    window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
-  }, []);
-
-  if (showAdmin) {
-    return (
-      <>
-        <Admin />
-        <Toaster />
-      </>
-    );
-  }
-
   return (
     <>
       <RouterProvider router={router} />

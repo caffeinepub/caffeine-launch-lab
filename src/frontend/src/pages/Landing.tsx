@@ -244,8 +244,7 @@ const caffeineFeatures = [
 ];
 
 export default function Landing() {
-  const { isAuthenticated, login, logout, isLoggingIn, isLoginSuccess } =
-    useAuth();
+  const { isAuthenticated, logout, isLoginSuccess } = useAuth();
 
   useEffect(() => {
     if (isLoginSuccess) {
@@ -261,10 +260,6 @@ export default function Landing() {
   const [activeSuggestion, setActiveSuggestion] = useState<number | null>(null);
   const { data: backendHistory } = useMyHistory();
   const { data: publicTools = [] } = usePublicTools();
-
-  // suppress unused warning – login is kept for programmatic use (e.g. hidden admin access)
-  void login;
-  void isLoggingIn;
 
   const features = [
     {
@@ -352,7 +347,7 @@ export default function Landing() {
             <span className="text-white text-sm sm:text-base">AIToolsProX</span>
           </a>
 
-          {/* Desktop: only show Admin/Logout when authenticated */}
+          {/* Desktop: show Admin/Logout when authenticated */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && (
               <>
