@@ -23,9 +23,7 @@ export default function ElevenLabsPage() {
             className="flex items-center gap-2 font-bold tracking-wide"
           >
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
-            <span className="text-white text-sm sm:text-base">
-              CAFFEINE <span className="text-[#00e5ff]">LAUNCH LAB</span>
-            </span>
+            <span className="text-white text-sm sm:text-base">AIToolsProX</span>
           </a>
           <div className="w-24" />
         </div>
@@ -177,38 +175,43 @@ export default function ElevenLabsPage() {
 
       {/* FOOTER */}
       <footer className="border-t border-[rgba(0,229,255,0.08)] py-10 px-4 mt-4">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-center gap-2 mb-8">
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
-            <span className="text-white font-bold text-sm">
-              CAFFEINE <span className="text-[#00e5ff]">LAUNCH LAB</span>
-            </span>
+            <span className="text-white font-bold text-sm">AIToolsProX</span>
           </div>
-          <p className="text-[#4a6070] text-xs text-center">
-            © {new Date().getFullYear()}.{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#00e5ff] hover:underline"
-            >
-              Built with love using caffeine.ai
-            </a>
-          </p>
-        </div>
-        <div className="max-w-5xl mx-auto mt-8 pt-6 border-t border-[rgba(0,229,255,0.08)]">
-          <p className="text-[#4a6070] text-xs text-center leading-relaxed">
-            <span className="text-[#93a4b6] font-semibold">
-              Transparenz & Hinweis:
-            </span>{" "}
-            Diese Seite enthält Affiliate-Links. Wenn du über einen dieser Links
-            ein Produkt kaufst oder dich registrierst, erhalten wir
-            möglicherweise eine Provision – für dich entstehen dabei keine
-            Mehrkosten. Wir empfehlen nur Tools, von denen wir überzeugt sind.
-            Alle Angaben ohne Gewähr. Ergebnisse können individuell variieren.
-            Externe Links führen zu Seiten Dritter, für deren Inhalte wir keine
-            Verantwortung übernehmen.
-          </p>
+          <div className="max-w-3xl mx-auto border-t border-[rgba(0,229,255,0.08)] pt-6">
+            <p className="text-[#93a4b6] text-xs font-semibold mb-3 text-center">
+              Transparenz &amp; Hinweis:
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Diese Website ist ein unabhängiges Projekt und steht in keiner
+              direkten Verbindung zu den genannten Unternehmen, Plattformen oder
+              Marken (z.&nbsp;B. Caffeine, Canva, ElevenLabs oder andere).
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Einige Links auf dieser Website sind sogenannte Affiliate-Links.
+              Wenn du über diese Links ein Produkt kaufst oder dich
+              registrierst, erhalten wir möglicherweise eine Provision – für
+              dich entstehen dabei keine zusätzlichen Kosten.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Die Inhalte dieser Website dienen ausschließlich zu
+              Informationszwecken. Wir übernehmen keine Garantie oder Haftung
+              für die Richtigkeit, Vollständigkeit oder Aktualität.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Die Nutzung der vorgestellten Tools erfolgt auf eigene
+              Verantwortung. Ergebnisse sind nicht garantiert.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-6">
+              Externe Links führen zu Webseiten Dritter, auf deren Inhalte wir
+              keinen Einfluss haben. Dafür übernehmen wir keine Haftung.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center">
+              © 2026 AIToolsProX
+            </p>
+          </div>
         </div>
       </footer>
     </div>

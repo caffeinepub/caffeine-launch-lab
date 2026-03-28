@@ -8,12 +8,11 @@ import {
   Check,
   ChevronRight,
   Clock,
-  Cpu,
+  DollarSign,
   ExternalLink,
-  Layout,
   Menu,
   Rocket,
-  Share2,
+  TrendingUp,
   Users,
   X,
   Zap,
@@ -263,26 +262,30 @@ export default function Landing() {
   const { data: backendHistory } = useMyHistory();
   const { data: publicTools = [] } = usePublicTools();
 
+  // suppress unused warning – login is kept for programmatic use (e.g. hidden admin access)
+  void login;
+  void isLoggingIn;
+
   const features = [
     {
-      icon: <Layout className="w-6 h-6" />,
-      title: "Landingpage Builder",
-      desc: "Erstelle professionelle Landingpages in Minuten – ohne Code, ohne Design-Kenntnisse.",
+      icon: <Rocket className="w-6 h-6" />,
+      title: "Website, App & Funnel erstellen",
+      desc: "Baue deine eigene Webseite, App oder Landingpage in Minuten – ohne Programmieren.",
+    },
+    {
+      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Content & Reichweite aufbauen",
+      desc: "Erstelle virale Inhalte, Hooks und Skripte für TikTok, Instagram und mehr Traffic.",
+    },
+    {
+      icon: <DollarSign className="w-6 h-6" />,
+      title: "Online Geld verdienen",
+      desc: "Nutze Affiliate Links und Tools, um automatisiert Einnahmen zu generieren.",
     },
     {
       icon: <Zap className="w-6 h-6" />,
-      title: "Content Generator",
-      desc: "Virale Hooks, Skripte, Captions und Hashtags – alles auf Knopfdruck generiert.",
-    },
-    {
-      icon: <Share2 className="w-6 h-6" />,
-      title: "Affiliate Tools",
-      desc: "Automatisierte Affiliate-Links, Tracking und Conversion-Optimierung.",
-    },
-    {
-      icon: <Cpu className="w-6 h-6" />,
-      title: "Mini Apps",
-      desc: "Kleine, fokussierte Apps für spezifische Aufgaben – schnell deployed, sofort nutzbar.",
+      title: "Automatisieren & skalieren",
+      desc: "Lass KI für dich arbeiten und baue dir ein System, das langfristig läuft.",
     },
   ];
 
@@ -317,16 +320,27 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-[rgba(0,229,255,0.08)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <nav className="hidden md:flex items-center gap-7">
-            {["Features", "Wie es funktioniert", "Über uns"].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                data-ocid="nav.link"
-                className="text-sm text-[#93a4b6] hover:text-white transition-colors"
-              >
-                {item}
-              </a>
-            ))}
+            <a
+              href="#features"
+              data-ocid="nav.link"
+              className="text-sm text-[#93a4b6] hover:text-white transition-colors"
+            >
+              Features
+            </a>
+            <a
+              href="#wie-es-funktioniert"
+              data-ocid="nav.link"
+              className="text-sm text-[#93a4b6] hover:text-white transition-colors"
+            >
+              Wie es funktioniert
+            </a>
+            <a
+              href="/about"
+              data-ocid="nav.link"
+              className="text-sm text-[#93a4b6] hover:text-white transition-colors"
+            >
+              Über uns
+            </a>
           </nav>
 
           <a
@@ -335,13 +349,12 @@ export default function Landing() {
             data-ocid="nav.link"
           >
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
-            <span className="text-white text-sm sm:text-base">
-              CAFFEINE <span className="text-[#00e5ff]">LAUNCH LAB</span>
-            </span>
+            <span className="text-white text-sm sm:text-base">AIToolsProX</span>
           </a>
 
+          {/* Desktop: only show Admin/Logout when authenticated */}
           <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
                 <a
                   href="/admin"
@@ -359,16 +372,6 @@ export default function Landing() {
                   Logout
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                data-ocid="nav.button"
-                onClick={login}
-                disabled={isLoggingIn}
-                className="glow-button px-6 py-2 rounded-full text-sm font-semibold text-[#0a0f1e]"
-              >
-                {isLoggingIn ? "\u2026" : "LOG IN"}
-              </button>
             )}
           </div>
 
@@ -388,16 +391,37 @@ export default function Landing() {
 
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0d1526] border-t border-[rgba(0,229,255,0.08)] px-4 py-4 space-y-3">
-            {["Features", "Wie es funktioniert", "Über uns"].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                className="block text-sm text-[#93a4b6] hover:text-white"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item}
-              </a>
-            ))}
+            <button
+              type="button"
+              className="block text-sm text-[#93a4b6] hover:text-white text-left"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                document
+                  .getElementById("features")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Features
+            </button>
+            <button
+              type="button"
+              className="block text-sm text-[#93a4b6] hover:text-white text-left"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                document
+                  .getElementById("wie-es-funktioniert")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Wie es funktioniert
+            </button>
+            <a
+              href="/about"
+              className="block text-sm text-[#93a4b6] hover:text-white"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Über uns
+            </a>
 
             {isAuthenticated && (
               <a
@@ -409,22 +433,13 @@ export default function Landing() {
                 Admin Dashboard
               </a>
             )}
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <button
                 type="button"
                 onClick={logout}
                 className="block text-sm text-[#00e5ff]"
               >
                 Logout
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={login}
-                disabled={isLoggingIn}
-                className="glow-button px-6 py-2 rounded-full text-sm font-semibold text-[#0a0f1e] w-full"
-              >
-                {isLoggingIn ? "Einloggen\u2026" : "LOG IN"}
               </button>
             )}
           </div>
@@ -498,19 +513,17 @@ export default function Landing() {
                       Caffeine AI
                     </span>
                   </div>
-                  {[
-                    "App erstellt \u2713",
-                    "Design fertig \u2713",
-                    "Live in 2 Min \u2713",
-                  ].map((line) => (
-                    <div
-                      key={line}
-                      className="flex items-center gap-2 text-sm text-[#93a4b6]"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] flex-shrink-0" />
-                      {line}
-                    </div>
-                  ))}
+                  {["App erstellt ✓", "Design fertig ✓", "Live in 2 Min ✓"].map(
+                    (line) => (
+                      <div
+                        key={line}
+                        className="flex items-center gap-2 text-sm text-[#93a4b6]"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] flex-shrink-0" />
+                        {line}
+                      </div>
+                    ),
+                  )}
                   <div className="pt-2 border-t border-[rgba(0,229,255,0.1)]">
                     <span className="text-[#00e5ff] text-xs font-semibold">
                       Keine Kenntnisse nötig
@@ -620,7 +633,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* FEATURES – So baust du dein AI Business */}
       <section id="features" className="py-20 px-4">
         <div className="max-w-5xl mx-auto">
           <motion.div
@@ -631,10 +644,10 @@ export default function Landing() {
             className="text-center mb-14"
           >
             <h2 className="text-3xl font-bold text-white mb-3">
-              Alles was du brauchst
+              So baust du dein AI Business
             </h2>
             <p className="text-[#93a4b6]">
-              Vier leistungsstarke Tools in einer Plattform
+              In 4 einfachen Schritten von der Idee zu deinem Online Einkommen
             </p>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -646,9 +659,15 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="glow-card p-6 hover:border-[rgba(0,229,255,0.5)] hover:shadow-[0_0_30px_rgba(0,229,255,0.15)] transition-all duration-300 cursor-default"
+                className="glow-card p-6 hover:border-[rgba(0,229,255,0.5)] hover:shadow-[0_0_30px_rgba(0,229,255,0.15)] transition-all duration-300 cursor-default relative"
               >
-                <div className="text-[#00e5ff] mb-4">{f.icon}</div>
+                {/* Step badge */}
+                <div className="absolute top-4 left-4 w-6 h-6 rounded-full bg-[#00e5ff] flex items-center justify-center">
+                  <span className="text-[#0a0f1e] text-xs font-black">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="text-[#00e5ff] mb-4 mt-6">{f.icon}</div>
                 <h3 className="text-white font-bold mb-2">{f.title}</h3>
                 <p className="text-[#93a4b6] text-sm leading-relaxed">
                   {f.desc}
@@ -656,6 +675,30 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
+
+          {/* Closing section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="text-center mt-14"
+          >
+            <p className="text-white text-xl font-bold mb-3">
+              … und das ist erst der Anfang.
+            </p>
+            <p className="text-[#93a4b6] text-base max-w-xl mx-auto mb-8">
+              Entdecke weitere KI-Tools, Strategien und Möglichkeiten, um dein
+              Online Business weiter auszubauen und zu skalieren.
+            </p>
+            <a
+              href="#tools"
+              data-ocid="features.secondary_button"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold border border-[rgba(0,229,255,0.4)] text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
+            >
+              Weitere Tools entdecken <ChevronRight className="w-4 h-4" />
+            </a>
+          </motion.div>
         </div>
       </section>
 
@@ -869,39 +912,44 @@ export default function Landing() {
       )}
 
       {/* FOOTER */}
-      <footer className="border-t border-[rgba(0,229,255,0.08)] py-10 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <footer className="border-t border-[rgba(0,229,255,0.08)] py-10 px-4 mt-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-center gap-2 mb-8">
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
-            <span className="text-white font-bold text-sm">
-              CAFFEINE <span className="text-[#00e5ff]">LAUNCH LAB</span>
-            </span>
+            <span className="text-white font-bold text-sm">AIToolsProX</span>
           </div>
-          <p className="text-[#4a6070] text-xs text-center">
-            &copy; {new Date().getFullYear()}.{" "}
-            <a
-              href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#00e5ff] hover:underline"
-            >
-              Built with love using caffeine.ai
-            </a>
-          </p>
-        </div>
-        <div className="max-w-5xl mx-auto mt-8 pt-6 border-t border-[rgba(0,229,255,0.08)]">
-          <p className="text-[#4a6070] text-xs text-center leading-relaxed">
-            <span className="text-[#93a4b6] font-semibold">
-              Transparenz & Hinweis:
-            </span>{" "}
-            Diese Seite enthält Affiliate-Links. Wenn du über einen dieser Links
-            ein Produkt kaufst oder dich registrierst, erhalten wir
-            möglicherweise eine Provision – für dich entstehen dabei keine
-            Mehrkosten. Wir empfehlen nur Tools, von denen wir überzeugt sind.
-            Alle Angaben ohne Gewähr. Ergebnisse können individuell variieren.
-            Externe Links führen zu Seiten Dritter, für deren Inhalte wir keine
-            Verantwortung übernehmen.
-          </p>
+          <div className="max-w-3xl mx-auto border-t border-[rgba(0,229,255,0.08)] pt-6">
+            <p className="text-[#93a4b6] text-xs font-semibold mb-3 text-center">
+              Transparenz &amp; Hinweis:
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Diese Website ist ein unabhängiges Projekt und steht in keiner
+              direkten Verbindung zu den genannten Unternehmen, Plattformen oder
+              Marken (z.&nbsp;B. Caffeine, Canva, ElevenLabs oder andere).
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Einige Links auf dieser Website sind sogenannte Affiliate-Links.
+              Wenn du über diese Links ein Produkt kaufst oder dich
+              registrierst, erhalten wir möglicherweise eine Provision – für
+              dich entstehen dabei keine zusätzlichen Kosten.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Die Inhalte dieser Website dienen ausschließlich zu
+              Informationszwecken. Wir übernehmen keine Garantie oder Haftung
+              für die Richtigkeit, Vollständigkeit oder Aktualität.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-4">
+              Die Nutzung der vorgestellten Tools erfolgt auf eigene
+              Verantwortung. Ergebnisse sind nicht garantiert.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center leading-relaxed mb-6">
+              Externe Links führen zu Webseiten Dritter, auf deren Inhalte wir
+              keinen Einfluss haben. Dafür übernehmen wir keine Haftung.
+            </p>
+            <p className="text-[#4a6070] text-xs text-center">
+              © 2026 AIToolsProX
+            </p>
+          </div>
         </div>
       </footer>
 
@@ -920,7 +968,7 @@ export default function Landing() {
             <div className="space-y-5">
               <div>
                 <h4 className="text-sm font-bold text-[#00e5ff] mb-2">
-                  \uD83C\uDF43 Hooks
+                  🍃 Hooks
                 </h4>
                 {selectedHistory.content.hooks.map((h, i) => (
                   <p key={h} className="text-[#c8d8e8] text-sm mb-1">
@@ -930,7 +978,7 @@ export default function Landing() {
               </div>
               <div>
                 <h4 className="text-sm font-bold text-[#00e5ff] mb-2">
-                  \uD83D\uDCD6 Story-Skript
+                  📖 Story-Skript
                 </h4>
                 <p className="text-[#c8d8e8] text-sm whitespace-pre-wrap">
                   {selectedHistory.content.script}
@@ -938,7 +986,7 @@ export default function Landing() {
               </div>
               <div>
                 <h4 className="text-sm font-bold text-[#00e5ff] mb-2">
-                  \u270D\uFE0F Caption
+                  ✍️ Caption
                 </h4>
                 <p className="text-[#c8d8e8] text-sm whitespace-pre-wrap">
                   {selectedHistory.content.caption}
@@ -946,7 +994,7 @@ export default function Landing() {
               </div>
               <div>
                 <h4 className="text-sm font-bold text-[#00e5ff] mb-2">
-                  #\uFE0F\u20E3 Hashtags
+                  #️⃣ Hashtags
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedHistory.content.hashtags.map((tag) => (
