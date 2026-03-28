@@ -612,7 +612,24 @@ export default function Landing() {
                       </div>
                       <div className="flex flex-col gap-2 mt-auto">
                         <a
-                          href={step.ctaHref}
+                          href={(() => {
+                            const m = publicTools.find(
+                              (t) =>
+                                t.name
+                                  .toLowerCase()
+                                  .includes(step.tool.toLowerCase()) ||
+                                step.tool
+                                  .toLowerCase()
+                                  .includes(t.name.toLowerCase()),
+                            );
+                            if (m) {
+                              return m.affiliateLink.length > 0 &&
+                                m.affiliateLink[0]
+                                ? m.affiliateLink[0]
+                                : m.fallbackLink;
+                            }
+                            return step.ctaHref;
+                          })()}
                           data-ocid={`flow.primary_button.${idx + 1}`}
                           {...(step.ctaExternal
                             ? { target: "_blank", rel: "noopener noreferrer" }
