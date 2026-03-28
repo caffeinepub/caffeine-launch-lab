@@ -1,11 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import {
-  RouterProvider,
-  createHashHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import AboutPage from "./pages/AboutPage";
 import Admin from "./pages/Admin";
 import CaffeineInfoPage from "./pages/CaffeineInfoPage";
@@ -17,94 +11,74 @@ import ImpressumPage from "./pages/ImpressumPage";
 import InVideoPage from "./pages/InVideoPage";
 import Landing from "./pages/Landing";
 
-const rootRoute = createRootRoute();
+function getHashPath(): string {
+  const hash = window.location.hash;
+  // Strip leading '#' to get the path, e.g. '#/admin' → '/admin'
+  const path = hash.startsWith("#") ? hash.slice(1) : hash;
+  return path || "/";
+}
 
-const landingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  component: Landing,
-});
+function useHashRouter() {
+  const [path, setPath] = useState(getHashPath);
 
-const adminRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/admin",
-  component: Admin,
-});
+  useEffect(() => {
+    const onHashChange = () => setPath(getHashPath());
+    window.addEventListener("hashchange", onHashChange);
+    // Also listen to popstate for back/forward navigation
+    window.addEventListener("popstate", onHashChange);
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("popstate", onHashChange);
+    };
+  }, []);
 
-const generatorRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/generator",
-  component: GeneratorPage,
-});
+  return path;
+}
 
-const caffeineInfoRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/caffeine-info",
-  component: CaffeineInfoPage,
-});
-
-const aboutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/about",
-  component: AboutPage,
-});
-
-const canvaRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/tool/canva",
-  component: CanvaPage,
-});
-
-const inVideoRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/tool/invideo",
-  component: InVideoPage,
-});
-
-const elevenLabsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/tool/elevenlabs",
-  component: ElevenLabsPage,
-});
-
-const impressumRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/impressum",
-  component: ImpressumPage,
-});
-
-const datenschutzRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/datenschutz",
-  component: DatenschutzPage,
-});
-
-const routeTree = rootRoute.addChildren([
-  landingRoute,
-  adminRoute,
-  generatorRoute,
-  caffeineInfoRoute,
-  aboutRoute,
-  canvaRoute,
-  inVideoRoute,
-  elevenLabsRoute,
-  impressumRoute,
-  datenschutzRoute,
-]);
-
-const hashHistory = createHashHistory();
-const router = createRouter({ routeTree, history: hashHistory });
-
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
+function resolveRoute(path: string): React.ReactNode {
+  // Exact and prefix matches
+  if (
+    path === "/admin" ||
+    path.startsWith("/admin/") ||
+    path.startsWith("/admin?")
+  ) {
+    return <Admin />;
   }
+  if (path === "/generator" || path.startsWith("/generator/")) {
+    return <GeneratorPage />;
+  }
+  if (path === "/caffeine-info" || path.startsWith("/caffeine-info/")) {
+    return <CaffeineInfoPage />;
+  }
+  if (path === "/about" || path.startsWith("/about/")) {
+    return <AboutPage />;
+  }
+  if (path === "/tool/canva") {
+    return <CanvaPage />;
+  }
+  if (path === "/tool/invideo") {
+    return <InVideoPage />;
+  }
+  if (path === "/tool/elevenlabs") {
+    return <ElevenLabsPage />;
+  }
+  if (path === "/impressum" || path.startsWith("/impressum/")) {
+    return <ImpressumPage />;
+  }
+  if (path === "/datenschutz" || path.startsWith("/datenschutz/")) {
+    return <DatenschutzPage />;
+  }
+  // Default: Landing page
+  return <Landing />;
 }
 
 export default function App() {
+  const path = useHashRouter();
+  const page = resolveRoute(path);
+
   return (
     <>
-      <RouterProvider router={router} />
+      {page}
       <Toaster />
     </>
   );
