@@ -75,7 +75,7 @@ const suggestions: Suggestion[] = [
       {
         num: "03",
         tool: "ElevenLabs",
-        action: "Voice-Over hinzuf\u00fcgen",
+        action: "Voice-Over hinzufügen",
         ctaLabel: "Tool nutzen",
         ctaHref: "https://elevenlabs.io",
         ctaExternal: true,
@@ -183,7 +183,7 @@ const suggestions: Suggestion[] = [
       {
         num: "03",
         tool: "InVideo",
-        action: "Promo-Video f\u00fcr deine Site",
+        action: "Promo-Video für deine Site",
         ctaLabel: "Tool nutzen",
         ctaHref: "https://invideo.io",
         ctaExternal: true,
@@ -219,7 +219,7 @@ const suggestions: Suggestion[] = [
       {
         num: "03",
         tool: "ElevenLabs",
-        action: "Sprachsteuerung hinzuf\u00fcgen",
+        action: "Sprachsteuerung hinzufügen",
         ctaLabel: "Tool nutzen",
         ctaHref: "https://elevenlabs.io",
         ctaExternal: true,
@@ -267,12 +267,12 @@ export default function Landing() {
     {
       icon: <Layout className="w-6 h-6" />,
       title: "Landingpage Builder",
-      desc: "Erstelle professionelle Landingpages in Minuten \u2013 ohne Code, ohne Design-Kenntnisse.",
+      desc: "Erstelle professionelle Landingpages in Minuten – ohne Code, ohne Design-Kenntnisse.",
     },
     {
       icon: <Zap className="w-6 h-6" />,
       title: "Content Generator",
-      desc: "Virale Hooks, Skripte, Captions und Hashtags \u2013 alles auf Knopfdruck generiert.",
+      desc: "Virale Hooks, Skripte, Captions und Hashtags – alles auf Knopfdruck generiert.",
     },
     {
       icon: <Share2 className="w-6 h-6" />,
@@ -282,7 +282,7 @@ export default function Landing() {
     {
       icon: <Cpu className="w-6 h-6" />,
       title: "Mini Apps",
-      desc: "Kleine, fokussierte Apps f\u00fcr spezifische Aufgaben \u2013 schnell deployed, sofort nutzbar.",
+      desc: "Kleine, fokussierte Apps für spezifische Aufgaben – schnell deployed, sofort nutzbar.",
     },
   ];
 
@@ -290,7 +290,7 @@ export default function Landing() {
     { num: "01", label: "Idee eingeben" },
     { num: "02", label: "App wird erstellt" },
     { num: "03", label: "Design anpassen" },
-    { num: "04", label: "Ver\u00f6ffentlichen" },
+    { num: "04", label: "Veröffentlichen" },
   ];
 
   const displayHistory =
@@ -317,18 +317,16 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-[rgba(0,229,255,0.08)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <nav className="hidden md:flex items-center gap-7">
-            {["Features", "Wie es funktioniert", "\u00dcber uns"].map(
-              (item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  data-ocid="nav.link"
-                  className="text-sm text-[#93a4b6] hover:text-white transition-colors"
-                >
-                  {item}
-                </a>
-              ),
-            )}
+            {["Features", "Wie es funktioniert", "Über uns"].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                data-ocid="nav.link"
+                className="text-sm text-[#93a4b6] hover:text-white transition-colors"
+              >
+                {item}
+              </a>
+            ))}
           </nav>
 
           <a
@@ -390,18 +388,16 @@ export default function Landing() {
 
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0d1526] border-t border-[rgba(0,229,255,0.08)] px-4 py-4 space-y-3">
-            {["Features", "Wie es funktioniert", "\u00dcber uns"].map(
-              (item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="block text-sm text-[#93a4b6] hover:text-white"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              ),
-            )}
+            {["Features", "Wie es funktioniert", "Über uns"].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                className="block text-sm text-[#93a4b6] hover:text-white"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item}
+              </a>
+            ))}
 
             {isAuthenticated && (
               <a
@@ -454,8 +450,8 @@ export default function Landing() {
               </h1>
               <p className="text-lg text-[#93a4b6] max-w-xl mb-8">
                 Erstelle Webseiten, Tools, KI-Workflows und digitale
-                Gesch\u00e4ftsmodelle in Minuten \u2013 einfach per Beschreibung
-                statt Programmierung.
+                Geschäftsmodelle in Minuten – einfach per Beschreibung statt
+                Programmierung.
               </p>
               <ul className="space-y-3 mb-10">
                 {caffeineFeatures.map((feat) => (
@@ -486,7 +482,7 @@ export default function Landing() {
                   data-ocid="hero.secondary_button"
                   className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold border border-[rgba(0,229,255,0.4)] text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
                 >
-                  Mehr \u00fcber Caffeine erfahren
+                  Mehr über Caffeine erfahren
                 </a>
               </div>
             </div>
@@ -517,7 +513,7 @@ export default function Landing() {
                   ))}
                   <div className="pt-2 border-t border-[rgba(0,229,255,0.1)]">
                     <span className="text-[#00e5ff] text-xs font-semibold">
-                      Keine Kenntnisse n\u00f6tig
+                      Keine Kenntnisse nötig
                     </span>
                   </div>
                 </div>
@@ -537,11 +533,11 @@ export default function Landing() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-bold text-white mb-3">
-              Was m\u00f6chtest du machen?
+              Was möchtest du machen?
             </h2>
             <p className="text-[#93a4b6]">
-              Klick auf dein Ziel \u2013 und bekomme sofort deinen
-              Schritt-f\u00fcr-Schritt Plan.
+              Klick auf dein Ziel – und bekomme sofort deinen
+              Schritt-für-Schritt Plan.
             </p>
           </motion.div>
 
@@ -708,10 +704,7 @@ export default function Landing() {
       </section>
 
       {/* STORY SECTION */}
-      <section
-        id="\u00fcber-uns"
-        className="py-20 px-4 bg-[rgba(0,229,255,0.02)]"
-      >
+      <section id="über-uns" className="py-20 px-4 bg-[rgba(0,229,255,0.02)]">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -722,11 +715,11 @@ export default function Landing() {
               Ich war genau wie du.
             </h2>
             <p className="text-[#93a4b6] text-lg leading-relaxed mb-8">
-              Ideen hatte ich viele \u2013 aber kein Budget, keine Entwickler,
-              keine Zeit.
+              Ideen hatte ich viele – aber kein Budget, keine Entwickler, keine
+              Zeit.
               <br className="hidden sm:block" />
               Dann entdeckte ich Caffeine AI. Heute baue ich Apps und verdiene
-              damit Geld \u2013 ohne eine Zeile Code.
+              damit Geld – ohne eine Zeile Code.
             </p>
             <a
               href="https://caffeine.ai"
@@ -753,10 +746,10 @@ export default function Landing() {
               className="text-center mb-12"
             >
               <h2 className="text-3xl font-bold text-white mb-3">
-                Zus\u00e4tzliche Tools f\u00fcr dein Wachstum
+                Zusätzliche Tools für dein Wachstum
               </h2>
               <p className="text-[#93a4b6]">
-                Erg\u00e4nzende Tools, die deinen Workflow beschleunigen.
+                Ergänzende Tools, die deinen Workflow beschleunigen.
               </p>
             </motion.div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -901,14 +894,13 @@ export default function Landing() {
             <span className="text-[#93a4b6] font-semibold">
               Transparenz & Hinweis:
             </span>{" "}
-            Diese Seite enth\u00e4lt Affiliate-Links. Wenn du \u00fcber einen
-            dieser Links ein Produkt kaufst oder dich registrierst, erhalten wir
-            m\u00f6glicherweise eine Provision \u2013 f\u00fcr dich entstehen
-            dabei keine Mehrkosten. Wir empfehlen nur Tools, von denen wir
-            \u00fcberzeugt sind. Alle Angaben ohne Gew\u00e4hr. Ergebnisse
-            k\u00f6nnen individuell variieren. Externe Links f\u00fchren zu
-            Seiten Dritter, f\u00fcr deren Inhalte wir keine Verantwortung
-            \u00fcbernehmen.
+            Diese Seite enthält Affiliate-Links. Wenn du über einen dieser Links
+            ein Produkt kaufst oder dich registrierst, erhalten wir
+            möglicherweise eine Provision – für dich entstehen dabei keine
+            Mehrkosten. Wir empfehlen nur Tools, von denen wir überzeugt sind.
+            Alle Angaben ohne Gewähr. Ergebnisse können individuell variieren.
+            Externe Links führen zu Seiten Dritter, für deren Inhalte wir keine
+            Verantwortung übernehmen.
           </p>
         </div>
       </footer>
