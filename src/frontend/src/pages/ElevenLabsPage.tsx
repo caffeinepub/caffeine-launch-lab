@@ -19,7 +19,7 @@ export default function ElevenLabsPage() {
             Zurück
           </button>
           <a
-            href="/"
+            href="/#/"
             className="flex items-center gap-2 font-bold tracking-wide"
           >
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
@@ -213,14 +213,14 @@ export default function ElevenLabsPage() {
             </p>
             <div className="flex items-center justify-center gap-3 mt-2">
               <a
-                href="/impressum"
+                href="/#/impressum"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Impressum
               </a>
               <span className="text-[#4a6070] text-xs">|</span>
               <a
-                href="/datenschutz"
+                href="/#/datenschutz"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Datenschutz

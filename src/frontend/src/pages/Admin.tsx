@@ -20,7 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -40,7 +40,6 @@ import {
   useCreateTool,
   useDeleteContent,
   useDeleteTool,
-  useIsAdmin,
   useSaveContent,
   useStats,
   useUpdateTool,
@@ -521,8 +520,9 @@ function ToolVerwaltung() {
 }
 
 export default function Admin() {
-  const { isAuthenticated, isInitializing, logout, identity } = useAuth();
-  const { isLoading: adminLoading } = useIsAdmin();
+  const { isAuthenticated, isInitializing, login, logout, identity } =
+    useAuth();
+
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: allHistory, isLoading: historyLoading } = useAllHistory();
   const deleteContent = useDeleteContent();
@@ -531,8 +531,6 @@ export default function Admin() {
 
   const [tab, setTab] = useState<AdminTab>("generator");
   const [selectedIds, setSelectedIds] = useState<Set<bigint>>(new Set());
-  const [redirecting, setRedirecting] = useState(false);
-
   // Generator state
   const [generatorTopic, setGeneratorTopic] = useState("");
   const [generatorResult, setGeneratorResult] =
@@ -540,19 +538,35 @@ export default function Admin() {
   const [isSaved, setIsSaved] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    if (!isInitializing && !adminLoading && !isAuthenticated) {
-      setRedirecting(true);
-      window.location.href = "/";
-    }
-  }, [isInitializing, adminLoading, isAuthenticated]);
-
-  if (redirecting || isInitializing || adminLoading) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
         <div className="text-[#00e5ff] text-center">
           <div className="w-10 h-10 border-2 border-[#00e5ff] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-[#93a4b6]">Wird geladen…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
+        <div className="text-center max-w-sm mx-auto px-6">
+          <div className="w-16 h-16 rounded-full bg-[#00e5ff]/10 border border-[#00e5ff]/30 flex items-center justify-center mx-auto mb-6">
+            <span className="text-3xl">🔐</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Admin-Bereich</h1>
+          <p className="text-[#93a4b6] text-sm mb-8">
+            Bitte melde dich an, um das Admin Dashboard zu öffnen.
+          </p>
+          <button
+            type="button"
+            onClick={() => login()}
+            className="w-full py-3 px-6 bg-[#00e5ff] text-[#0b0f1a] font-bold rounded-xl hover:bg-[#00b8cc] transition-colors"
+          >
+            Mit Internet Identity anmelden
+          </button>
         </div>
       </div>
     );
@@ -672,7 +686,7 @@ export default function Admin() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 border-r border-[rgba(0,229,255,0.08)] bg-[#0d1526] flex-col min-h-screen">
         <div className="p-6 border-b border-[rgba(0,229,255,0.08)]">
-          <a href="/" className="flex items-center gap-2">
+          <a href="/#/" className="flex items-center gap-2">
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
             <span className="text-white font-bold text-sm">
               CAFFEINE <span className="text-[#00e5ff]">LAB</span>

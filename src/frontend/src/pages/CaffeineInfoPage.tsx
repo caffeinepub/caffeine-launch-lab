@@ -63,14 +63,14 @@ export default function CaffeineInfoPage() {
       <header className="fixed top-0 left-0 right-0 z-50 nav-blur border-b border-[rgba(0,229,255,0.08)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <a
-            href="/"
+            href="/#/"
             className="flex items-center gap-2 text-sm text-[#93a4b6] hover:text-white transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Zurück zur Startseite
           </a>
           <a
-            href="/"
+            href="/#/"
             className="flex items-center gap-2 font-bold tracking-wide"
           >
             <Rocket className="w-5 h-5 text-[#00e5ff]" />
@@ -265,14 +265,14 @@ export default function CaffeineInfoPage() {
             </p>
             <div className="flex items-center justify-center gap-3 mt-2">
               <a
-                href="/impressum"
+                href="/#/impressum"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Impressum
               </a>
               <span className="text-[#4a6070] text-xs">|</span>
               <a
-                href="/datenschutz"
+                href="/#/datenschutz"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Datenschutz

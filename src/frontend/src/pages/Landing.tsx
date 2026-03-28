@@ -249,7 +249,7 @@ export default function Landing() {
 
   useEffect(() => {
     if (isLoginSuccess) {
-      window.location.href = "/admin";
+      window.location.href = "/#/admin";
     }
   }, [isLoginSuccess]);
 
@@ -335,7 +335,7 @@ export default function Landing() {
               Wie es funktioniert
             </a>
             <a
-              href="/about"
+              href="/#/about"
               data-ocid="nav.link"
               className="text-sm text-[#93a4b6] hover:text-white transition-colors"
             >
@@ -344,7 +344,7 @@ export default function Landing() {
           </nav>
 
           <a
-            href="/"
+            href="/#/"
             className="flex items-center gap-2 font-bold tracking-wide"
             data-ocid="nav.link"
           >
@@ -357,7 +357,7 @@ export default function Landing() {
             {isAuthenticated && (
               <>
                 <a
-                  href="/admin"
+                  href="/#/admin"
                   data-ocid="nav.link"
                   className="text-sm text-[#00e5ff] hover:underline"
                 >
@@ -416,19 +416,17 @@ export default function Landing() {
               Wie es funktioniert
             </button>
             <a
-              href="/about"
+              href="/#/about"
               className="block text-sm text-[#93a4b6] hover:text-white"
-              onClick={() => setMobileMenuOpen(false)}
             >
               Über uns
             </a>
 
             {isAuthenticated && (
               <a
-                href="/admin"
+                href="/#/admin"
                 data-ocid="nav.link"
                 className="block text-sm text-[#00e5ff] font-medium"
-                onClick={() => setMobileMenuOpen(false)}
               >
                 Admin Dashboard
               </a>
@@ -493,7 +491,7 @@ export default function Landing() {
                   <ChevronRight className="w-4 h-4" />
                 </a>
                 <a
-                  href="/caffeine-info"
+                  href="/#/caffeine-info"
                   data-ocid="hero.secondary_button"
                   className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold border border-[rgba(0,229,255,0.4)] text-[#00e5ff] hover:bg-[rgba(0,229,255,0.08)] transition-all"
                 >
@@ -951,14 +949,14 @@ export default function Landing() {
             </p>
             <div className="flex items-center justify-center gap-3 mt-2">
               <a
-                href="/impressum"
+                href="/#/impressum"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Impressum
               </a>
               <span className="text-[#4a6070] text-xs">|</span>
               <a
-                href="/datenschutz"
+                href="/#/datenschutz"
                 className="text-[#4a6070] text-xs hover:text-[#00e5ff] transition-colors"
               >
                 Datenschutz
