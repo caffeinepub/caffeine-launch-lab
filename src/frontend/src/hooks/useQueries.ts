@@ -211,3 +211,37 @@ export function useDeleteTool() {
     },
   });
 }
+
+// ---- Visitor tracking hooks ----
+
+export interface VisitorStats {
+  totalVisits: bigint;
+  dailyData: Array<[string, bigint]>;
+}
+
+export function useVisitorStats() {
+  const { anonActor } = useAnonActor();
+  return useQuery<VisitorStats>({
+    queryKey: ["visitorStats"],
+    queryFn: async () => {
+      if (!anonActor) return { totalVisits: BigInt(0), dailyData: [] };
+      return (anonActor as any).getVisitorStats();
+    },
+    enabled: !!anonActor,
+    staleTime: 30_000,
+  });
+}
+
+export function useTrackVisit() {
+  const { anonActor } = useAnonActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (dayKey: string) => {
+      if (!anonActor) return;
+      await (anonActor as any).trackVisit(dayKey);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["visitorStats"] });
+    },
+  });
+}

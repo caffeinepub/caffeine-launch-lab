@@ -19,7 +19,12 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { type Tool, useMyHistory, usePublicTools } from "../hooks/useQueries";
+import {
+  type Tool,
+  useMyHistory,
+  usePublicTools,
+  useTrackVisit,
+} from "../hooks/useQueries";
 import { useAuth } from "../lib/auth";
 import type { GeneratedContent } from "../lib/templates";
 
@@ -245,6 +250,13 @@ const caffeineFeatures = [
 
 export default function Landing() {
   const { isAuthenticated, logout, isLoginSuccess } = useAuth();
+
+  const trackVisitMutation = useTrackVisit();
+  const trackVisitMutate = trackVisitMutation.mutate;
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    trackVisitMutate(today);
+  }, [trackVisitMutate]);
 
   useEffect(() => {
     if (isLoginSuccess) {

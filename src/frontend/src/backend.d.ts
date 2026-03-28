@@ -30,17 +30,45 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface Tool {
+    id: bigint;
+    emoji: string;
+    name: string;
+    kurzbeschreibung: string;
+    zielgruppe: string;
+    affiliateLink: [] | [string];
+    fallbackLink: string;
+    reihenfolge: bigint;
+    isPublic: boolean;
+}
+export interface CreateToolArgs {
+    emoji: string;
+    name: string;
+    kurzbeschreibung: string;
+    zielgruppe: string;
+    affiliateLink: [] | [string];
+    fallbackLink: string;
+    reihenfolge: bigint;
+    isPublic: boolean;
+}
+export interface VisitorStats {
+    totalVisits: bigint;
+    dailyData: Array<[string, bigint]>;
+}
 export interface backendInterface {
-    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkDelete(ids: Array<bigint>): Promise<bigint>;
     deleteContent(id: bigint): Promise<boolean>;
     getAllHistory(): Promise<Array<ContentRecord>>;
-    getCallerUserProfile(): Promise<UserProfile | null>;
-    getCallerUserRole(): Promise<UserRole>;
     getMyHistory(): Promise<Array<ContentRecord>>;
     getStats(): Promise<Stats>;
-    getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveContent(topic: string, hooks: Array<string>, script: string, canvaTips: string, caption: string, hashtags: Array<string>): Promise<bigint>;
+    getPublicTools(): Promise<Array<Tool>>;
+    getAllToolsAdmin(): Promise<Array<Tool>>;
+    createTool(args: CreateToolArgs): Promise<bigint>;
+    updateTool(id: bigint, args: CreateToolArgs): Promise<boolean>;
+    deleteTool(id: bigint): Promise<boolean>;
+    trackVisit(dayKey: string): Promise<void>;
+    getVisitorStats(): Promise<VisitorStats>;
+    _initializeAccessControlWithSecret(secret: string): Promise<void>;
 }

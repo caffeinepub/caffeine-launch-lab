@@ -74,6 +74,32 @@ actor {
     isPublic : Bool;
   };
 
+  // ===== Visitor Tracking =====
+  public type VisitorStats = {
+    totalVisits : Nat;
+    dailyData : [(Text, Nat)];
+  };
+
+  stable var totalVisits : Nat = 0;
+  stable let dailyVisits = Map.empty<Text, Nat>();
+
+  // Called by frontend on every page load. dayKey is "YYYY-MM-DD".
+  public func trackVisit(dayKey : Text) : async () {
+    totalVisits += 1;
+    let current = switch (dailyVisits.get(dayKey)) {
+      case null 0;
+      case (?n) n;
+    };
+    dailyVisits.add(dayKey, current + 1);
+  };
+
+  public query func getVisitorStats() : async VisitorStats {
+    {
+      totalVisits = totalVisits;
+      dailyData = dailyVisits.entries().toArray();
+    };
+  };
+
   // ===== Stable Storage =====
   stable let contentRecords = Map.empty<Nat, ContentRecord>();
   stable var nextId : Nat = 0;
@@ -186,7 +212,6 @@ actor {
   };
 
   // ===== Tool Functions =====
-  // Reads: public, no auth needed (admin page protected by frontend login)
   public query func getPublicTools() : async [Tool] {
     simpleTools.values()
       .filter(func(t : Tool) : Bool { t.isPublic })
@@ -197,7 +222,6 @@ actor {
     simpleTools.values().toArray();
   };
 
-  // Writes: require login
   public shared ({ caller }) func createTool(args : CreateToolArgs) : async Nat {
     if (caller.isAnonymous()) { Runtime.trap("Not authenticated") };
     let tool : Tool = {
