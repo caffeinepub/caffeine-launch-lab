@@ -313,24 +313,100 @@ export class Backend implements backendInterface {
         }
     }
     async getPublicTools(): Promise<Array<any>> {
-        const result = await this.actor.getPublicTools();
-        return result;
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPublicTools();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPublicTools();
+            return result;
+        }
     }
     async getAllToolsAdmin(): Promise<Array<any>> {
-        const result = await this.actor.getAllToolsAdmin();
-        return result;
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllToolsAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllToolsAdmin();
+            return result;
+        }
     }
     async createTool(args: any): Promise<bigint> {
-        const result = await this.actor.createTool(args);
-        return result;
+        if (this.processError) {
+            try {
+                const result = await this.actor.createTool(args);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createTool(args);
+            return result;
+        }
     }
     async updateTool(id: bigint, args: any): Promise<boolean> {
-        const result = await this.actor.updateTool(id, args);
-        return result;
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateTool(id, args);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateTool(id, args);
+            return result;
+        }
     }
     async deleteTool(id: bigint): Promise<boolean> {
-        const result = await this.actor.deleteTool(id);
-        return result;
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteTool(id);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteTool(id);
+            return result;
+        }
+    }
+    async trackVisit(dayKey: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.trackVisit(dayKey);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.trackVisit(dayKey);
+        }
+    }
+    async getVisitorStats(): Promise<any> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getVisitorStats();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getVisitorStats();
+            return result;
+        }
     }
 
 }

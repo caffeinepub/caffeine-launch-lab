@@ -5,35 +5,20 @@ import { createActorWithConfig } from "../config";
 // Anonymous actor for public/read-only calls.
 // No _initializeAccessControlWithSecret, no auth dependency.
 // Both admin reads and public reads use this to avoid auth timing issues.
-// NOTE: We do NOT use a module-level cache here because a cached failed actor
-// would never be retried. React Query handles caching and retries correctly.
+//
+// NOTE: Actor CREATION never throws IC0508 -- that error only occurs at call time
+// (when getPublicTools/getAllToolsAdmin is actually called). The IC0508 check
+// belongs in useQueries.ts where the actual canister call happens.
 
 export function useAnonActor() {
   const query = useQuery<backendInterface>({
     queryKey: ["anonActor"],
     queryFn: async () => {
-      try {
-        const actor = await createActorWithConfig();
-        return actor;
-      } catch (e) {
-        const errMsg = String(e);
-        if (errMsg.includes("IC0508") || errMsg.includes("is stopped")) {
-          console.error(
-            "[useAnonActor] Backend canister is stopped (IC0508). Redeploy required.",
-            e,
-          );
-          throw new Error(
-            "Backend nicht erreichbar – Canister gestoppt (IC0508). Bitte warte kurz und lade die Seite neu.",
-          );
-        }
-        console.error(
-          "[useAnonActor] Fehler beim Erstellen des anonymen Actors:",
-          e,
-        );
-        throw e;
-      }
+      const actor = await createActorWithConfig();
+      console.log("[useAnonActor] Anonymous actor created successfully");
+      return actor;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes – reuse actor, but allow refresh
+    staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),

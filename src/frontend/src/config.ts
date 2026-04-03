@@ -61,6 +61,12 @@ export async function loadConfig(): Promise<Config> {
           ? undefined
           : config.ii_derivation_origin,
     };
+    console.log(
+      "[config] Backend canister ID:",
+      fullConfig.backend_canister_id,
+      "| Host:",
+      fullConfig.backend_host ?? "(default IC)",
+    );
     configCache = fullConfig;
     return fullConfig;
   } catch {

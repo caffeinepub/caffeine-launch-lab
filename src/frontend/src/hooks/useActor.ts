@@ -16,7 +16,9 @@ export function useActor() {
 
       if (!isAuthenticated) {
         // Return anonymous actor if not authenticated
-        return await createActorWithConfig();
+        const anonActor = await createActorWithConfig();
+        console.log("[useActor] Anonymous actor created (not logged in)");
+        return anonActor;
       }
 
       const actorOptions = {
@@ -26,30 +28,44 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
+      console.log(
+        "[useActor] Authenticated actor created for principal:",
+        identity.getPrincipal().toString(),
+      );
 
-      // CRITICAL: _initializeAccessControlWithSecret MUST be wrapped in try/catch.
-      // If this call fails (e.g. canister stopped, method missing, network error),
-      // we still return the actor. Without this, actor becomes null and ALL write
-      // operations fail with "Not authenticated".
+      // CRITICAL: wrap _initializeAccessControlWithSecret in try/catch.
+      // If this call fails (canister stopped, network error, etc.), we must still
+      // return the actor. Throwing here would leave actor=null permanently
+      // (staleTime: Infinity means no retry), causing all write operations to fail
+      // with "Not authenticated".
       try {
         const adminToken = getSecretParameter("caffeineAdminToken") || "";
         await actor._initializeAccessControlWithSecret(adminToken);
+        console.log("[useActor] _initializeAccessControlWithSecret succeeded");
       } catch (e) {
+        // Log but do NOT rethrow. The actor is still valid for all tool operations.
+        // createTool/updateTool/deleteTool do NOT require access control initialization.
         console.warn(
           "[useActor] _initializeAccessControlWithSecret failed (non-fatal):",
-          e,
+          String(e),
         );
-        // Return actor anyway – it is still valid for calls that don't need
-        // the access-control secret.
       }
 
       return actor;
     },
-    // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
     enabled: true,
-    retry: 2,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    retry: (failureCount, error) => {
+      // Retry up to 2 times, but not for auth errors
+      const msg = String(error);
+      if (
+        msg.includes("Not authenticated") ||
+        msg.includes("CANISTER_ID_BACKEND is not set")
+      ) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // When the actor changes, invalidate dependent queries
