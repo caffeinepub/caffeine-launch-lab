@@ -3,6 +3,31 @@ import type { ContentRecord, Stats } from "../backend";
 import { useActor } from "./useActor";
 import { useAnonActor } from "./useAnonActor";
 
+// ---- Error helpers ----
+
+function isCanisterStopped(e: unknown): boolean {
+  const msg = String(e);
+  return (
+    msg.includes("IC0508") ||
+    msg.includes("is stopped") ||
+    msg.includes("Canister is stopped")
+  );
+}
+
+function friendlyError(e: unknown, context: string): string {
+  if (isCanisterStopped(e)) {
+    return "Backend nicht verfügbar (Canister gestoppt). Bitte lade die Seite in 30 Sekunden neu.";
+  }
+  const msg = String(e);
+  if (msg.includes("Not authenticated")) {
+    return "Nicht angemeldet – bitte neu einloggen.";
+  }
+  if (msg.includes("network") || msg.includes("fetch")) {
+    return "Netzwerkfehler – bitte Internetverbindung prüfen.";
+  }
+  return `Fehler in ${context}: ${msg}`;
+}
+
 export function useMyHistory() {
   const { actor, isFetching } = useActor();
   return useQuery<ContentRecord[]>({
@@ -141,16 +166,33 @@ export interface CreateToolArgs {
 // Normalize a raw tool record from the canister.
 // Handles potential field name mismatches between old and new canister versions.
 function normalizeTool(raw: Record<string, unknown>): Tool {
+  const name = (raw.name as string) || (raw.title as string) || "";
+  const kurzbeschreibung =
+    (raw.kurzbeschreibung as string) || (raw.description as string) || "";
+  const fallbackLink =
+    (raw.fallbackLink as string) ||
+    (raw.link as string) ||
+    (raw.fallback as string) ||
+    "";
+  const isPublic =
+    raw.isPublic !== undefined
+      ? (raw.isPublic as boolean)
+      : raw.visible !== undefined
+        ? (raw.visible as boolean)
+        : false;
+
   return {
     id: (raw.id as bigint) ?? BigInt(0),
     emoji: (raw.emoji as string) ?? "",
-    name: (raw.name as string) ?? "",
-    kurzbeschreibung: (raw.kurzbeschreibung as string) ?? "",
+    name,
+    kurzbeschreibung,
     zielgruppe: (raw.zielgruppe as string) ?? "",
-    affiliateLink: (raw.affiliateLink as [] | [string]) ?? [],
-    fallbackLink: (raw.fallbackLink as string) ?? (raw.link as string) ?? "",
+    affiliateLink:
+      (raw.affiliateLink as [] | [string]) ??
+      (raw.link !== undefined ? [raw.link as string] : []),
+    fallbackLink,
     reihenfolge: (raw.reihenfolge as bigint) ?? BigInt(0),
-    isPublic: (raw.isPublic as boolean) ?? false,
+    isPublic,
   };
 }
 
@@ -161,7 +203,7 @@ export function usePublicTools() {
     queryFn: async () => {
       if (!anonActor) {
         console.warn("[usePublicTools] anonActor not ready");
-        return [];
+        throw new Error("Actor nicht bereit");
       }
       try {
         const result = await (anonActor as any).getPublicTools();
@@ -169,18 +211,22 @@ export function usePublicTools() {
           console.error("[usePublicTools] unexpected result:", result);
           return [];
         }
+        console.log(
+          `[usePublicTools] ${result.length} öffentliche Tools geladen`,
+        );
         return result.map(normalizeTool);
       } catch (e) {
         console.error(
           "[usePublicTools] Fehler beim Laden der öffentlichen Tools:",
           e,
         );
-        throw e;
+        throw new Error(friendlyError(e, "getPublicTools"));
       }
     },
     enabled: !!anonActor,
-    retry: 2,
-    retryDelay: 1500,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1500 * 2 ** attempt, 10000),
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -191,7 +237,7 @@ export function useAllToolsAdmin() {
     queryFn: async () => {
       if (!anonActor) {
         console.warn("[useAllToolsAdmin] anonActor not ready, waiting...");
-        return [];
+        throw new Error("Actor nicht bereit – bitte kurz warten");
       }
       try {
         const result = await (anonActor as any).getAllToolsAdmin();
@@ -206,12 +252,14 @@ export function useAllToolsAdmin() {
         return result.map(normalizeTool);
       } catch (e) {
         console.error("[useAllToolsAdmin] Fehler beim Laden der Tools:", e);
-        throw e;
+        throw new Error(friendlyError(e, "getAllToolsAdmin"));
       }
     },
     enabled: !!anonActor,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    placeholderData: (prev) => prev,
+    staleTime: 0,
   });
 }
 
@@ -227,7 +275,7 @@ export function useCreateTool() {
         return result;
       } catch (e) {
         console.error("[useCreateTool] Fehler:", e);
-        throw e;
+        throw new Error(friendlyError(e, "createTool"));
       }
     },
     onSuccess: () => {
@@ -249,7 +297,7 @@ export function useUpdateTool() {
         return result;
       } catch (e) {
         console.error("[useUpdateTool] Fehler:", e);
-        throw e;
+        throw new Error(friendlyError(e, "updateTool"));
       }
     },
     onSuccess: () => {
@@ -271,7 +319,7 @@ export function useDeleteTool() {
         return result;
       } catch (e) {
         console.error("[useDeleteTool] Fehler:", e);
-        throw e;
+        throw new Error(friendlyError(e, "deleteTool"));
       }
     },
     onSuccess: () => {

@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import type { ContentRecord } from "../backend";
+import { useAnonActor } from "../hooks/useAnonActor";
 import { getAnalytics } from "../hooks/useLocalAnalytics";
 import {
   type CreateToolArgs,
@@ -112,7 +113,15 @@ function SectionCard({
 }
 
 function ToolVerwaltung() {
-  const { data: tools = [], isLoading, isError } = useAllToolsAdmin();
+  const { anonActor, isLoading: isActorLoading } = useAnonActor();
+  const {
+    data: tools,
+    isLoading: isToolsLoading,
+    isError,
+    error: toolsError,
+  } = useAllToolsAdmin();
+  const isLoading = isActorLoading || isToolsLoading || !anonActor;
+  const safeTools = tools ?? [];
   const createTool = useCreateTool();
   const updateTool = useUpdateTool();
   const deleteTool = useDeleteTool();
@@ -232,12 +241,26 @@ function ToolVerwaltung() {
       )}
 
       {isError && (
-        <div data-ocid="tools.error_state" className="text-red-400 py-4">
-          Fehler beim Laden der Tools. Bitte Seite neu laden.
+        <div data-ocid="tools.error_state" className="space-y-2 py-4">
+          <p className="text-red-400 font-medium">
+            Fehler beim Laden der Tools.
+          </p>
+          <p className="text-red-300/70 text-sm">
+            {toolsError instanceof Error
+              ? toolsError.message
+              : String(toolsError)}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10 transition-colors"
+          >
+            Seite neu laden
+          </button>
         </div>
       )}
 
-      {!isLoading && !isError && tools.length === 0 && (
+      {!isLoading && !isError && safeTools.length === 0 && (
         <div
           data-ocid="tools.empty_state"
           className="glow-card p-8 text-center text-[#93a4b6]"
@@ -247,9 +270,9 @@ function ToolVerwaltung() {
         </div>
       )}
 
-      {!isLoading && tools.length > 0 && (
+      {!isLoading && safeTools.length > 0 && (
         <div className="space-y-3" data-ocid="tools.list">
-          {tools.map((tool, idx) => (
+          {safeTools.map((tool, idx) => (
             <div
               key={String(tool.id)}
               data-ocid={`tools.item.${idx + 1}`}

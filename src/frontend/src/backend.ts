@@ -332,18 +332,7 @@ export class Backend implements backendInterface {
         const result = await this.actor.deleteTool(id);
         return result;
     }
-    async getCategories(): Promise<Array<any>> {
-        const result = await this.actor.getCategories();
-        return result;
-    }
-    async createCategory(name: string): Promise<bigint> {
-        const result = await this.actor.createCategory(name);
-        return result;
-    }
-    async deleteCategory(id: bigint): Promise<boolean> {
-        const result = await this.actor.deleteCategory(id);
-        return result;
-    }
+
 }
 function from_candid_UserRole_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n5(_uploadFile, _downloadFile, value);

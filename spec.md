@@ -1,53 +1,37 @@
-# AIToolsProX – Analytics (localStorage)
+# AIToolsProX
 
 ## Current State
 
-The Admin Dashboard already has an "Analytics" tab (`tab === "analytics"` in `Admin.tsx`). It currently uses `useVisitorStats()` which calls the backend canister method `getVisitorStats()` and `trackVisit()`. The backend-based tracking has been unreliable (canister stopped, network errors, 0 values displayed). The Landing page calls `useTrackVisit()` which fires a backend mutation on every homepage visit.
+The app has a working backend with `createTool`, `getTools`, `updateTool`, `deleteTool`, `getPublicTools`, and `getAllToolsAdmin` methods. Analytics uses localStorage. The backend canister is currently stopped (IC0508), causing all tool operations to fail.
+
+Frontend issues:
+- `useActor.ts`: `_initializeAccessControlWithSecret` is NOT wrapped in try/catch inside the `queryFn`. If it throws (e.g. canister stopped, wrong method call), the entire queryFn throws and the actor query returns an error — meaning `actor` is `null` for all writes.
+- `useAnonActor.ts`: Module-level cache means a failed creation is never retried without a manual `resetAnonActor()` call. No canister-stopped detection.
+- `useQueries.ts`: Error messages are generic — no distinction between IC0508 (canister stopped), auth errors, or network issues.
+- `backend.ts`: The `Backend` class has three dead methods (`getCategories`, `createCategory`, `deleteCategory`) that call non-existent actor methods, potentially destabilizing actor calls.
+- Error display in `ToolVerwaltung`: Shows generic "Fehler beim Laden der Tools" with no detail.
 
 ## Requested Changes (Diff)
 
 ### Add
-- A new `useLocalAnalytics` hook in `src/frontend/src/hooks/useLocalAnalytics.ts` that:
-  - Tracks all data in `localStorage` only (key: `aitoolsprox_analytics`)
-  - On each page load: increments `pageViews` total counter
-  - Identifies new vs returning visitors via a `visitorId` key in localStorage
-  - Increments `totalVisitors` only if no `visitorId` exists yet (new visitor)
-  - Sets `visitorId` on first visit
-  - Stores daily visit counts keyed by ISO date string (YYYY-MM-DD) for the last 7 days
-  - Exposes: `totalVisitors`, `visitorsToday`, `visitorsThisWeek`, `pageViews`, `returningVisitors`
-  - Returns `recordVisit()` function to be called on page load
+- Canister-stopped detection helper: parse IC0508 from error messages and show specific user-facing message
+- Retry logic in `useAnonActor` when canister was recently stopped (exponential backoff already there, keep it)
 
 ### Modify
-- `Landing.tsx`: Replace `useTrackVisit` (backend) with `useLocalAnalytics().recordVisit()` call on mount
-- `Admin.tsx` Analytics tab: Replace `visitorStatsData` (backend) with data from `useLocalAnalytics()`
-  - Show 4 stat cards: Total Visitors, Visitors Today, This Week (last 7 days), Page Views
-  - Keep the bar chart using daily data from localStorage
-  - Keep the existing Content-Analytics and history sections unchanged
+- `useActor.ts`: Wrap `_initializeAccessControlWithSecret` in try/catch; log the error but always return the actor. This matches the fix that was applied in previous sessions but may have been reverted.
+- `useAnonActor.ts`: Remove module-level cache (or invalidate it on error), so a failed actor creation is retried on next hook call. Add specific console error for IC0508.
+- `useQueries.ts`: In `useAllToolsAdmin` and `usePublicTools`, catch IC0508 specifically and throw a human-readable error. In `ToolVerwaltung` error display, show the actual error message when available.
+- `backend.ts`: Remove `getCategories`, `createCategory`, `deleteCategory` methods that call non-existent backend methods.
+- `Admin.tsx` (ToolVerwaltung component): Display specific error message from the query error object instead of generic text.
 
 ### Remove
-- Backend `useVisitorStats` and `useTrackVisit` calls from Landing.tsx and Admin.tsx
-- No backend changes needed
+- Dead actor methods in `backend.ts` that don't exist in the Motoko canister
 
 ## Implementation Plan
 
-1. Create `src/frontend/src/hooks/useLocalAnalytics.ts`:
-   - Read/write a single JSON object in localStorage key `aitoolsprox_analytics`
-   - Structure: `{ visitorId: string|null, totalVisitors: number, pageViews: number, dailyVisits: { [dateKey: string]: number }, returningVisitors: number }`
-   - `recordVisit()`: called once per page load
-     - Always increment `pageViews`
-     - If no `visitorId` → new visitor: set `visitorId` (uuid-like timestamp), increment `totalVisitors`
-     - If `visitorId` exists → returning visitor: increment `returningVisitors`
-     - Increment today's daily count
-     - Prune daily entries older than 30 days
-   - Computed getters: `visitorsToday` (today's daily count), `visitorsThisWeek` (sum of last 7 days)
-
-2. Update `Landing.tsx`:
-   - Remove `useTrackVisit` import and usage
-   - Import and call `useLocalAnalytics().recordVisit()` on mount (useEffect, once)
-
-3. Update `Admin.tsx` Analytics tab:
-   - Remove `useVisitorStats` import and usage
-   - Import `useLocalAnalytics`
-   - Replace the 4 stat cards with: Total Visitors, Visitors Today, This Week, Page Views
-   - Update bar chart data source from `visitorStatsData.dailyData` to local analytics daily data
-   - Keep Content-Analytics section unchanged
+1. Fix `useActor.ts` — wrap `_initializeAccessControlWithSecret` in try/catch, always return actor
+2. Fix `useAnonActor.ts` — remove broken module-level cache that prevents retry; let react-query handle caching
+3. Fix `useQueries.ts` — add IC0508 error detection helper, improve error messages for tool loading
+4. Fix `backend.ts` — remove dead methods
+5. Fix `Admin.tsx` ToolVerwaltung — show specific error details
+6. Deploy (restarts the stopped canister)
