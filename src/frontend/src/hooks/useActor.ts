@@ -16,9 +16,7 @@ export function useActor() {
 
       if (!isAuthenticated) {
         // Return anonymous actor if not authenticated
-        const anonActor = await createActorWithConfig();
-        console.log("[useActor] Anonymous actor created (not logged in)");
-        return anonActor;
+        return await createActorWithConfig();
       }
 
       const actorOptions = {
@@ -28,44 +26,14 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
-      console.log(
-        "[useActor] Authenticated actor created for principal:",
-        identity.getPrincipal().toString(),
-      );
-
-      // CRITICAL: wrap _initializeAccessControlWithSecret in try/catch.
-      // If this call fails (canister stopped, network error, etc.), we must still
-      // return the actor. Throwing here would leave actor=null permanently
-      // (staleTime: Infinity means no retry), causing all write operations to fail
-      // with "Not authenticated".
-      try {
-        const adminToken = getSecretParameter("caffeineAdminToken") || "";
-        await actor._initializeAccessControlWithSecret(adminToken);
-        console.log("[useActor] _initializeAccessControlWithSecret succeeded");
-      } catch (e) {
-        // Log but do NOT rethrow. The actor is still valid for all tool operations.
-        // createTool/updateTool/deleteTool do NOT require access control initialization.
-        console.warn(
-          "[useActor] _initializeAccessControlWithSecret failed (non-fatal):",
-          String(e),
-        );
-      }
-
+      const adminToken = getSecretParameter("caffeineAdminToken") || "";
+      await actor._initializeAccessControlWithSecret(adminToken);
       return actor;
     },
+    // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
+    // This will cause the actor to be recreated when the identity changes
     enabled: true,
-    retry: (failureCount, error) => {
-      // Retry up to 2 times, but not for auth errors
-      const msg = String(error);
-      if (
-        msg.includes("Not authenticated") ||
-        msg.includes("CANISTER_ID_BACKEND is not set")
-      ) {
-        return false;
-      }
-      return failureCount < 2;
-    },
   });
 
   // When the actor changes, invalidate dependent queries

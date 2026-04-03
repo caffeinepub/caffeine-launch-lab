@@ -20,7 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -538,13 +538,16 @@ export default function Admin() {
     useAuth();
 
   const { data: stats, isLoading: statsLoading } = useStats();
-  const localAnalytics = getAnalytics();
+  const [localAnalytics, setLocalAnalytics] = useState(() => getAnalytics());
   const { data: allHistory, isLoading: historyLoading } = useAllHistory();
   const deleteContent = useDeleteContent();
   const bulkDelete = useBulkDelete();
   const saveContent = useSaveContent();
 
   const [tab, setTab] = useState<AdminTab>("generator");
+  useEffect(() => {
+    if (tab === "analytics") setLocalAnalytics(getAnalytics());
+  }, [tab]);
   const [selectedIds, setSelectedIds] = useState<Set<bigint>>(new Set());
   // Generator state
   const [generatorTopic, setGeneratorTopic] = useState("");
