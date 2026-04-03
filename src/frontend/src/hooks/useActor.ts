@@ -27,7 +27,17 @@ export function useActor() {
 
       const actor = await createActorWithConfig(actorOptions);
       const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      await actor._initializeAccessControlWithSecret(adminToken);
+      // Always wrap in try/catch so a canister error here never blocks the actor.
+      // The actor must always be returned after login, regardless of what
+      // _initializeAccessControlWithSecret does.
+      try {
+        await actor._initializeAccessControlWithSecret(adminToken);
+      } catch (e) {
+        console.warn(
+          "[useActor] _initializeAccessControlWithSecret failed (non-fatal):",
+          e,
+        );
+      }
       return actor;
     },
     // Only refetch when identity changes
