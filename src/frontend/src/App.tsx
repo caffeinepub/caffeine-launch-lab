@@ -22,7 +22,11 @@ function useHashRouter() {
   const [path, setPath] = useState(getHashPath);
 
   useEffect(() => {
-    const onHashChange = () => setPath(getHashPath());
+    const onHashChange = () => {
+      const newPath = getHashPath();
+      setPath(newPath);
+      window.scrollTo(0, 0);
+    };
     window.addEventListener("hashchange", onHashChange);
     // Also listen to popstate for back/forward navigation
     window.addEventListener("popstate", onHashChange);
