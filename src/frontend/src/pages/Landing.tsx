@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type Tool,
   useMyHistory,
@@ -34,203 +34,114 @@ interface LocalHistory {
   timestamp: number;
 }
 
-type StepItem = {
-  num: string;
-  tool: string;
-  action: string;
-  ctaLabel: string;
-  ctaHref: string;
-  ctaExternal?: boolean;
-  detailHref: string;
-  detailLabel: string;
-};
+type CategoryKey = "tiktok" | "virale" | "geld" | "website" | "app";
 
-type Suggestion = {
+type CategoryInfo = {
   emoji: string;
   label: string;
-  steps: StepItem[];
+  key: CategoryKey;
+  intro: string;
+  bulletHeading: string;
+  bullets: string[];
+  outro: string;
+  recommendedTools: string[];
 };
 
-const suggestions: Suggestion[] = [
+const categories: CategoryInfo[] = [
   {
-    emoji: "\uD83C\uDFA5",
+    key: "tiktok",
+    emoji: "🎥",
     label: "TikTok Videos erstellen",
-    steps: [
-      {
-        num: "01",
-        tool: "Caffeine AI",
-        action: "Ideen & Skripte generieren",
-        ctaLabel: "Mit Caffeine starten",
-        ctaHref: "https://caffeine.ai",
-        ctaExternal: true,
-        detailHref: "/caffeine-info",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "02",
-        tool: "InVideo",
-        action: "Video erstellen",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://invideo.io",
-        ctaExternal: true,
-        detailHref: "/tool/invideo",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "03",
-        tool: "ElevenLabs",
-        action: "Voice-Over hinzufügen",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://elevenlabs.io",
-        ctaExternal: true,
-        detailHref: "/tool/elevenlabs",
-        detailLabel: "Mehr erfahren",
-      },
+    intro:
+      "Für TikTok brauchst du vor allem Tools für Ideen, Skripte, Voiceover und Video-Erstellung. So kannst du schnell virale Videos erstellen, ohne viel Zeit zu investieren.",
+    bulletHeading: "Mit den richtigen Tools kannst du:",
+    bullets: [
+      "virale Hooks generieren",
+      "Skripte automatisch erstellen",
+      "Videos schneiden und optimieren",
+      "Voiceovers hinzufügen",
+    ],
+    outro: "Perfekt für schnelles Wachstum auf TikTok und Reels.",
+    recommendedTools: [
+      "Caffeine AI – Ideen & Skripte",
+      "InVideo – Video erstellen",
+      "ElevenLabs – Voiceover",
     ],
   },
   {
-    emoji: "\uD83D\uDD25",
+    key: "virale",
+    emoji: "🔥",
     label: "Virale Content Ideen",
-    steps: [
-      {
-        num: "01",
-        tool: "Caffeine AI",
-        action: "Virale Hooks generieren",
-        ctaLabel: "Mit Caffeine starten",
-        ctaHref: "https://caffeine.ai",
-        ctaExternal: true,
-        detailHref: "/caffeine-info",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "02",
-        tool: "Canva",
-        action: "Design erstellen",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://www.canva.com",
-        ctaExternal: true,
-        detailHref: "/tool/canva",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "03",
-        tool: "InVideo",
-        action: "Content als Video",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://invideo.io",
-        ctaExternal: true,
-        detailHref: "/tool/invideo",
-        detailLabel: "Mehr erfahren",
-      },
+    intro:
+      "Viraler Content entsteht nicht zufällig – sondern durch die richtigen Ideen und Formate.",
+    bulletHeading: "Mit diesen Tools kannst du:",
+    bullets: [
+      "virale Hooks und Ideen generieren",
+      "Trends schneller erkennen",
+      "Content planen und strukturieren",
+      "deine Reichweite gezielt steigern",
+    ],
+    outro: "Ideal für Social Media Wachstum und mehr Aufmerksamkeit.",
+    recommendedTools: [
+      "Caffeine AI – Ideen & Hooks",
+      "Canva – Designs erstellen",
     ],
   },
   {
-    emoji: "\uD83D\uDCB0",
+    key: "geld",
+    emoji: "💰",
     label: "Geld online verdienen",
-    steps: [
-      {
-        num: "01",
-        tool: "Caffeine AI",
-        action: "Dein Business aufbauen",
-        ctaLabel: "Mit Caffeine starten",
-        ctaHref: "https://caffeine.ai",
-        ctaExternal: true,
-        detailHref: "/caffeine-info",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "02",
-        tool: "Canva",
-        action: "Produkte & Angebote gestalten",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://www.canva.com",
-        ctaExternal: true,
-        detailHref: "/tool/canva",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "03",
-        tool: "ElevenLabs",
-        action: "Deine Stimme automatisieren",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://elevenlabs.io",
-        ctaExternal: true,
-        detailHref: "/tool/elevenlabs",
-        detailLabel: "Mehr erfahren",
-      },
+    intro:
+      "Online Geld verdienen wird einfacher, wenn du die richtigen Tools nutzt.",
+    bulletHeading: "Diese Tools helfen dir dabei:",
+    bullets: [
+      "Content zu erstellen, der verkauft",
+      "Affiliate-Marketing aufzubauen",
+      "Landingpages zu erstellen",
+      "automatisierte Systeme zu nutzen",
+    ],
+    outro:
+      "Perfekt für Einsteiger und alle, die sich ein Online-Einkommen aufbauen wollen.",
+    recommendedTools: [
+      "Caffeine AI – Content & Ideen",
+      "Canva – Marketing Designs",
+      "InVideo – Video Content",
     ],
   },
   {
-    emoji: "\uD83C\uDF10",
+    key: "website",
+    emoji: "🌐",
     label: "Website erstellen",
-    steps: [
-      {
-        num: "01",
-        tool: "Caffeine AI",
-        action: "Website in Minuten bauen",
-        ctaLabel: "Mit Caffeine starten",
-        ctaHref: "https://caffeine.ai",
-        ctaExternal: true,
-        detailHref: "/caffeine-info",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "02",
-        tool: "Canva",
-        action: "Design-Assets erstellen",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://www.canva.com",
-        ctaExternal: true,
-        detailHref: "/tool/canva",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "03",
-        tool: "InVideo",
-        action: "Promo-Video für deine Site",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://invideo.io",
-        ctaExternal: true,
-        detailHref: "/tool/invideo",
-        detailLabel: "Mehr erfahren",
-      },
+    intro:
+      "Eine professionelle Website ist die Basis für dein Online-Business.",
+    bulletHeading: "Mit diesen Tools kannst du:",
+    bullets: [
+      "Webseiten ohne Programmieren erstellen",
+      "Landingpages bauen",
+      "Designs und Inhalte kombinieren",
+      "deine Marke professionell präsentieren",
+    ],
+    outro: "Ideal für Projekte, Business und persönliche Webseiten.",
+    recommendedTools: [
+      "Caffeine AI – Website bauen",
+      "Canva – Design & Inhalte",
     ],
   },
   {
-    emoji: "\uD83D\uDCF1",
+    key: "app",
+    emoji: "📱",
     label: "App ohne Programmieren",
-    steps: [
-      {
-        num: "01",
-        tool: "Caffeine AI",
-        action: "App-Idee direkt umsetzen",
-        ctaLabel: "Mit Caffeine starten",
-        ctaHref: "https://caffeine.ai",
-        ctaExternal: true,
-        detailHref: "/caffeine-info",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "02",
-        tool: "Canva",
-        action: "UI Mockups gestalten",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://www.canva.com",
-        ctaExternal: true,
-        detailHref: "/tool/canva",
-        detailLabel: "Mehr erfahren",
-      },
-      {
-        num: "03",
-        tool: "ElevenLabs",
-        action: "Sprachsteuerung hinzufügen",
-        ctaLabel: "Tool nutzen",
-        ctaHref: "https://elevenlabs.io",
-        ctaExternal: true,
-        detailHref: "/tool/elevenlabs",
-        detailLabel: "Mehr erfahren",
-      },
+    intro:
+      "Du kannst heute komplette Apps bauen – ohne eine einzige Zeile Code.",
+    bulletHeading: "Diese Tools ermöglichen dir:",
+    bullets: [
+      "Web-Apps aus Ideen zu erstellen",
+      "Funktionen schnell umzusetzen",
+      "digitale Produkte zu bauen",
+      "eigene Tools zu entwickeln",
     ],
+    outro: "Perfekt für Gründer, Creator und Side-Business Ideen.",
+    recommendedTools: ["Caffeine AI – Apps erstellen"],
   },
 ];
 
@@ -269,7 +180,8 @@ export default function Landing() {
   const [selectedHistory, setSelectedHistory] = useState<LocalHistory | null>(
     null,
   );
-  const [activeSuggestion, setActiveSuggestion] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const toolsSectionRef = useRef<HTMLElement | null>(null);
   const { data: backendHistory } = useMyHistory();
   const { data: publicTools = [] } = usePublicTools();
 
@@ -302,6 +214,13 @@ export default function Landing() {
     { num: "03", label: "Design anpassen" },
     { num: "04", label: "Veröffentlichen" },
   ];
+
+  const scrollToTools = () => {
+    const el = document.getElementById("tools");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   const displayHistory =
     isAuthenticated && backendHistory && backendHistory.length > 0
@@ -543,7 +462,7 @@ export default function Landing() {
 
       {/* INTERACTIVE FLOW SECTION */}
       <section className="py-20 px-4 bg-[rgba(0,229,255,0.02)]">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -554,84 +473,107 @@ export default function Landing() {
               Was möchtest du machen?
             </h2>
             <p className="text-[#93a4b6]">
-              Klick auf dein Ziel – und bekomme sofort deinen
-              Schritt-für-Schritt Plan.
+              Wähle dein Ziel und erfahre, wie du es mit den richtigen Tools
+              erreichst.
             </p>
           </motion.div>
 
+          {/* Category buttons */}
           <div className="flex flex-wrap gap-3 justify-center mb-10">
-            {suggestions.map((s, i) => (
+            {categories.map((cat, i) => (
               <button
-                key={s.label}
+                key={cat.key}
                 type="button"
                 data-ocid={`flow.tab.${i + 1}`}
                 onClick={() =>
-                  setActiveSuggestion(activeSuggestion === i ? null : i)
+                  setActiveCategory(activeCategory === i ? null : i)
                 }
                 className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold border transition-all duration-200 ${
-                  activeSuggestion === i
+                  activeCategory === i
                     ? "bg-[#00e5ff] text-[#0a0f1e] border-[#00e5ff] shadow-[0_0_20px_rgba(0,229,255,0.5)]"
                     : "bg-[#0d1526] text-[#93a4b6] border-[rgba(0,229,255,0.2)] hover:border-[rgba(0,229,255,0.6)] hover:text-white"
                 }`}
               >
-                <span>{s.emoji}</span>
-                {s.label}
+                <span>{cat.emoji}</span>
+                {cat.label}
               </button>
             ))}
           </div>
 
+          {/* Explanation panel */}
           <AnimatePresence mode="wait">
-            {activeSuggestion !== null && (
+            {activeCategory !== null && (
               <motion.div
-                key={activeSuggestion}
+                key={activeCategory}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.35 }}
                 data-ocid="flow.panel"
+                className="bg-[#0d1b2a] border border-[rgba(0,229,255,0.2)] rounded-2xl p-6 sm:p-8"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  {suggestions[activeSuggestion].steps.map((step, idx) => (
-                    <div
-                      key={step.num}
-                      data-ocid={`flow.item.${idx + 1}`}
-                      className="glow-card p-6 flex flex-col gap-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#00e5ff] font-black text-2xl tabular-nums">
-                          {step.num}
-                        </span>
-                        <div>
-                          <p className="text-white font-bold text-sm">
-                            {step.tool}
-                          </p>
-                          <p className="text-[#93a4b6] text-xs">
-                            {step.action}
-                          </p>
-                        </div>
+                {(() => {
+                  const cat = categories[activeCategory];
+                  return (
+                    <div className="space-y-5">
+                      <p className="text-[#c8d8e8] text-base leading-relaxed">
+                        {cat.intro}
+                      </p>
+
+                      <div>
+                        <p className="text-white font-semibold mb-3">
+                          {cat.bulletHeading}
+                        </p>
+                        <ul className="space-y-2">
+                          {cat.bullets.map((bullet) => (
+                            <li key={bullet} className="flex items-start gap-3">
+                              <span className="w-5 h-5 rounded-full bg-[rgba(0,229,255,0.15)] border border-[#00e5ff] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <Check className="w-3 h-3 text-[#00e5ff]" />
+                              </span>
+                              <span className="text-[#c8d8e8] text-sm leading-relaxed">
+                                {bullet}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                      <div className="flex flex-col gap-2 mt-auto">
-                        <a
-                          href={step.ctaHref}
-                          data-ocid={`flow.primary_button.${idx + 1}`}
-                          {...(step.ctaExternal
-                            ? { target: "_blank", rel: "noopener noreferrer" }
-                            : {})}
-                          className="glow-button text-center px-4 py-2.5 rounded-lg text-sm font-bold text-[#0a0f1e]"
+
+                      <p className="text-[#93a4b6] text-sm italic">
+                        {cat.outro}
+                      </p>
+
+                      {/* Recommended tools list – text only, no links */}
+                      <div className="border-t border-[rgba(0,229,255,0.1)] pt-4">
+                        <p className="text-white font-semibold text-sm mb-3">
+                          Empfohlene Tools für dieses Ziel
+                        </p>
+                        <ul className="space-y-2">
+                          {cat.recommendedTools.map((tool) => (
+                            <li
+                              key={tool}
+                              className="flex items-center gap-2 text-sm text-[#c8d8e8]"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] flex-shrink-0" />
+                              {tool}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          data-ocid="flow.scroll_button"
+                          onClick={scrollToTools}
+                          className="glow-button inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold text-[#0a0f1e]"
                         >
-                          {step.ctaLabel}
-                        </a>
-                        <a
-                          href={step.detailHref}
-                          data-ocid={`flow.link.${idx + 1}`}
-                          className="text-center text-xs text-[#00e5ff] hover:underline py-1"
-                        >
-                          {step.detailLabel} &rarr;
-                        </a>
+                          Passende Tools ansehen
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </motion.div>
             )}
           </AnimatePresence>
@@ -784,7 +726,11 @@ export default function Landing() {
 
       {/* ADDITIONAL TOOLS SECTION */}
       {publicTools.length > 0 && (
-        <section id="tools" className="py-20 px-4 bg-[rgba(0,229,255,0.02)]">
+        <section
+          id="tools"
+          ref={toolsSectionRef}
+          className="py-20 px-4 bg-[rgba(0,229,255,0.02)]"
+        >
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
