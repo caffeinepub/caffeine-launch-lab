@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ContentRecord, Stats } from "../backend";
 import { useActor } from "./useActor";
+import { useAnonActor } from "./useAnonActor";
 
 export function useMyHistory() {
   const { actor, isFetching } = useActor();
@@ -112,7 +113,7 @@ export function useIsAdmin() {
   });
 }
 
-// ---- Tool hooks ----
+// ---- Tool types ----
 
 export interface Tool {
   id: bigint;
@@ -137,18 +138,49 @@ export interface CreateToolArgs {
   isPublic: boolean;
 }
 
-import { useAnonActor } from "./useAnonActor";
+// Normalize a raw tool record from the canister.
+// Handles potential field name mismatches between old and new canister versions.
+function normalizeTool(raw: Record<string, unknown>): Tool {
+  return {
+    id: (raw.id as bigint) ?? BigInt(0),
+    emoji: (raw.emoji as string) ?? "",
+    name: (raw.name as string) ?? "",
+    kurzbeschreibung: (raw.kurzbeschreibung as string) ?? "",
+    zielgruppe: (raw.zielgruppe as string) ?? "",
+    affiliateLink: (raw.affiliateLink as [] | [string]) ?? [],
+    fallbackLink: (raw.fallbackLink as string) ?? (raw.link as string) ?? "",
+    reihenfolge: (raw.reihenfolge as bigint) ?? BigInt(0),
+    isPublic: (raw.isPublic as boolean) ?? false,
+  };
+}
 
 export function usePublicTools() {
   const { anonActor } = useAnonActor();
   return useQuery<Tool[]>({
     queryKey: ["publicTools"],
     queryFn: async () => {
-      if (!anonActor) return [];
-      const result = await (anonActor as any).getPublicTools();
-      return Array.isArray(result) ? result : [];
+      if (!anonActor) {
+        console.warn("[usePublicTools] anonActor not ready");
+        return [];
+      }
+      try {
+        const result = await (anonActor as any).getPublicTools();
+        if (!Array.isArray(result)) {
+          console.error("[usePublicTools] unexpected result:", result);
+          return [];
+        }
+        return result.map(normalizeTool);
+      } catch (e) {
+        console.error(
+          "[usePublicTools] Fehler beim Laden der öffentlichen Tools:",
+          e,
+        );
+        throw e;
+      }
     },
     enabled: !!anonActor,
+    retry: 2,
+    retryDelay: 1500,
   });
 }
 
@@ -157,13 +189,29 @@ export function useAllToolsAdmin() {
   return useQuery<Tool[]>({
     queryKey: ["allToolsAdmin"],
     queryFn: async () => {
-      if (!anonActor) return [];
-      const result = await (anonActor as any).getAllToolsAdmin();
-      return Array.isArray(result) ? result : [];
+      if (!anonActor) {
+        console.warn("[useAllToolsAdmin] anonActor not ready, waiting...");
+        return [];
+      }
+      try {
+        const result = await (anonActor as any).getAllToolsAdmin();
+        if (!Array.isArray(result)) {
+          console.error(
+            "[useAllToolsAdmin] unerwartetes Ergebnis vom Backend:",
+            result,
+          );
+          throw new Error("Ungültiges Ergebnis vom Backend");
+        }
+        console.log(`[useAllToolsAdmin] ${result.length} Tools geladen`);
+        return result.map(normalizeTool);
+      } catch (e) {
+        console.error("[useAllToolsAdmin] Fehler beim Laden der Tools:", e);
+        throw e;
+      }
     },
     enabled: !!anonActor,
     retry: 3,
-    retryDelay: 1000,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
 
@@ -172,8 +220,15 @@ export function useCreateTool() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (args: CreateToolArgs) => {
-      if (!actor) throw new Error("Not authenticated");
-      return (actor as any).createTool(args);
+      if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      try {
+        const result = await (actor as any).createTool(args);
+        console.log("[useCreateTool] Tool erstellt, ID:", result);
+        return result;
+      } catch (e) {
+        console.error("[useCreateTool] Fehler:", e);
+        throw e;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
@@ -187,8 +242,15 @@ export function useUpdateTool() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, args }: { id: bigint; args: CreateToolArgs }) => {
-      if (!actor) throw new Error("Not authenticated");
-      return (actor as any).updateTool(id, args);
+      if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      try {
+        const result = await (actor as any).updateTool(id, args);
+        console.log("[useUpdateTool] Tool aktualisiert:", String(id), result);
+        return result;
+      } catch (e) {
+        console.error("[useUpdateTool] Fehler:", e);
+        throw e;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
@@ -202,8 +264,15 @@ export function useDeleteTool() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: bigint) => {
-      if (!actor) throw new Error("Not authenticated");
-      return (actor as any).deleteTool(id);
+      if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      try {
+        const result = await (actor as any).deleteTool(id);
+        console.log("[useDeleteTool] Tool gelöscht:", String(id), result);
+        return result;
+      } catch (e) {
+        console.error("[useDeleteTool] Fehler:", e);
+        throw e;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });

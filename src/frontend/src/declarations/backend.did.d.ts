@@ -44,12 +44,18 @@ export interface VisitorStats {
   'dailyData' : Array<[string, bigint]>,
 }
 export interface _SERVICE {
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'bulkDelete' : ActorMethod<[Array<bigint>], bigint>,
   'deleteContent' : ActorMethod<[bigint], boolean>,
   'getAllHistory' : ActorMethod<[], Array<ContentRecord>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getMyHistory' : ActorMethod<[], Array<ContentRecord>>,
   'getStats' : ActorMethod<[], Stats>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveContent' : ActorMethod<[string, Array<string>, string, string, string, Array<string>], bigint>,
   'getPublicTools' : ActorMethod<[], Array<Tool>>,
   'getAllToolsAdmin' : ActorMethod<[], Array<Tool>>,

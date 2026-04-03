@@ -52,12 +52,18 @@ export const VisitorStats = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'bulkDelete' : IDL.Func([IDL.Vec(IDL.Nat)], [IDL.Nat], []),
   'deleteContent' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'getAllHistory' : IDL.Func([], [IDL.Vec(ContentRecord)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getMyHistory' : IDL.Func([], [IDL.Vec(ContentRecord)], ['query']),
   'getStats' : IDL.Func([], [Stats], ['query']),
+  'getUserProfile' : IDL.Func([IDL.Principal], [IDL.Opt(UserProfile)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveContent' : IDL.Func(
       [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
       [IDL.Nat],
