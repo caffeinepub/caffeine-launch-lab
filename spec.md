@@ -1,33 +1,53 @@
-# Caffeine Launch Lab – Tool System
+# AIToolsProX – Analytics (localStorage)
 
 ## Current State
-App has backend with tool methods (createTool, updateTool, deleteTool, getPublicTools, getAllToolsAdmin) but backend.did.js IDL is missing these methods. This causes all tool calls to silently hang. The Backend class in backend.ts has the methods manually added but they delegate to actor methods that don't exist in the IDL.
+
+The Admin Dashboard already has an "Analytics" tab (`tab === "analytics"` in `Admin.tsx`). It currently uses `useVisitorStats()` which calls the backend canister method `getVisitorStats()` and `trackVisit()`. The backend-based tracking has been unreliable (canister stopped, network errors, 0 values displayed). The Landing page calls `useTrackVisit()` which fires a backend mutation on every homepage visit.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Tool IDL types and methods to backend.did.js
-- useAnonActor hook (anonymous actor for reads, bypasses auth timing)
-- Tool query/mutation hooks in useQueries.ts
-- ToolVerwaltung tab in Admin.tsx (simple list + modal form)
-- Tools section in Landing.tsx (isPublic tools, sorted by reihenfolge)
+- A new `useLocalAnalytics` hook in `src/frontend/src/hooks/useLocalAnalytics.ts` that:
+  - Tracks all data in `localStorage` only (key: `aitoolsprox_analytics`)
+  - On each page load: increments `pageViews` total counter
+  - Identifies new vs returning visitors via a `visitorId` key in localStorage
+  - Increments `totalVisitors` only if no `visitorId` exists yet (new visitor)
+  - Sets `visitorId` on first visit
+  - Stores daily visit counts keyed by ISO date string (YYYY-MM-DD) for the last 7 days
+  - Exposes: `totalVisitors`, `visitorsToday`, `visitorsThisWeek`, `pageViews`, `returningVisitors`
+  - Returns `recordVisit()` function to be called on page load
 
 ### Modify
-- backend.did.js: add Tool, CreateToolArgs IDL types + 5 tool methods to idlService
-- useActor.ts: wrap _initializeAccessControlWithSecret in try/catch
-- useQueries.ts: add tool hooks
-- Admin.tsx: add Tool-Verwaltung tab
-- Landing.tsx: add tools section
-- backend/main.mo: remove postupgrade seed logic (user wants no seed data)
+- `Landing.tsx`: Replace `useTrackVisit` (backend) with `useLocalAnalytics().recordVisit()` call on mount
+- `Admin.tsx` Analytics tab: Replace `visitorStatsData` (backend) with data from `useLocalAnalytics()`
+  - Show 4 stat cards: Total Visitors, Visitors Today, This Week (last 7 days), Page Views
+  - Keep the bar chart using daily data from localStorage
+  - Keep the existing Content-Analytics and history sections unchanged
 
 ### Remove
-- postupgrade seed data in main.mo
-- Any existing /tools page route (tools only on homepage)
+- Backend `useVisitorStats` and `useTrackVisit` calls from Landing.tsx and Admin.tsx
+- No backend changes needed
 
 ## Implementation Plan
-1. Fix backend.did.js to include tool IDL types and methods
-2. Add useAnonActor.ts hook (no auth, no _initializeAccessControlWithSecret)
-3. Add tool hooks to useQueries.ts using anonActor for reads, actor for writes
-4. Add ToolVerwaltung tab to Admin.tsx with simple list and create/edit/delete modal
-5. Add tools section to Landing.tsx showing isPublic tools sorted by reihenfolge
-6. Validate and build
+
+1. Create `src/frontend/src/hooks/useLocalAnalytics.ts`:
+   - Read/write a single JSON object in localStorage key `aitoolsprox_analytics`
+   - Structure: `{ visitorId: string|null, totalVisitors: number, pageViews: number, dailyVisits: { [dateKey: string]: number }, returningVisitors: number }`
+   - `recordVisit()`: called once per page load
+     - Always increment `pageViews`
+     - If no `visitorId` → new visitor: set `visitorId` (uuid-like timestamp), increment `totalVisitors`
+     - If `visitorId` exists → returning visitor: increment `returningVisitors`
+     - Increment today's daily count
+     - Prune daily entries older than 30 days
+   - Computed getters: `visitorsToday` (today's daily count), `visitorsThisWeek` (sum of last 7 days)
+
+2. Update `Landing.tsx`:
+   - Remove `useTrackVisit` import and usage
+   - Import and call `useLocalAnalytics().recordVisit()` on mount (useEffect, once)
+
+3. Update `Admin.tsx` Analytics tab:
+   - Remove `useVisitorStats` import and usage
+   - Import `useLocalAnalytics`
+   - Replace the 4 stat cards with: Total Visitors, Visitors Today, This Week, Page Views
+   - Update bar chart data source from `visitorStatsData.dailyData` to local analytics daily data
+   - Keep Content-Analytics section unchanged

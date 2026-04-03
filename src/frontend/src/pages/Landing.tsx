@@ -19,12 +19,8 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import {
-  type Tool,
-  useMyHistory,
-  usePublicTools,
-  useTrackVisit,
-} from "../hooks/useQueries";
+import { recordVisit } from "../hooks/useLocalAnalytics";
+import { type Tool, useMyHistory, usePublicTools } from "../hooks/useQueries";
 import { useAuth } from "../lib/auth";
 import type { GeneratedContent } from "../lib/templates";
 
@@ -145,13 +141,6 @@ const categories: CategoryInfo[] = [
   },
 ];
 
-function getToolDetailHref(toolName: string): string | null {
-  if (toolName.toLowerCase().includes("canva")) return "/tool/canva";
-  if (toolName.toLowerCase().includes("invideo")) return "/tool/invideo";
-  if (toolName.toLowerCase().includes("elevenlabs")) return "/tool/elevenlabs";
-  return null;
-}
-
 const caffeineFeatures = [
   "Webseiten erstellen",
   "Tools & Apps bauen",
@@ -162,12 +151,9 @@ const caffeineFeatures = [
 export default function Landing() {
   const { isAuthenticated, logout, isLoginSuccess } = useAuth();
 
-  const trackVisitMutation = useTrackVisit();
-  const trackVisitMutate = trackVisitMutation.mutate;
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    trackVisitMutate(today);
-  }, [trackVisitMutate]);
+    recordVisit();
+  }, []);
 
   useEffect(() => {
     if (isLoginSuccess) {
@@ -754,7 +740,6 @@ export default function Landing() {
                     tool.affiliateLink.length > 0 && tool.affiliateLink[0]
                       ? tool.affiliateLink[0]
                       : tool.fallbackLink;
-                  const detailHref = getToolDetailHref(tool.name);
                   return (
                     <motion.div
                       key={String(tool.id)}
@@ -791,15 +776,6 @@ export default function Landing() {
                           Jetzt starten
                           <ExternalLink className="w-4 h-4" />
                         </a>
-                        {detailHref && (
-                          <a
-                            href={detailHref}
-                            data-ocid={`tools.secondary_button.${idx + 1}`}
-                            className="w-full flex items-center justify-center gap-1 py-2 rounded-xl text-xs text-[#00e5ff] hover:underline transition-colors"
-                          >
-                            Mehr erfahren &rarr;
-                          </a>
-                        )}
                       </div>
                     </motion.div>
                   );

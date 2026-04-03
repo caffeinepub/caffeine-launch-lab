@@ -26,17 +26,8 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
-      try {
-        const adminToken = getSecretParameter("caffeineAdminToken") || "";
-        await actor._initializeAccessControlWithSecret(adminToken);
-      } catch (e) {
-        // Ignore errors from access control initialization.
-        // The actor is still valid and authenticated via Internet Identity.
-        console.warn(
-          "_initializeAccessControlWithSecret failed (non-fatal):",
-          e,
-        );
-      }
+      const adminToken = getSecretParameter("caffeineAdminToken") || "";
+      await actor._initializeAccessControlWithSecret(adminToken);
       return actor;
     },
     // Only refetch when identity changes

@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import type { ContentRecord } from "../backend";
+import { getAnalytics } from "../hooks/useLocalAnalytics";
 import {
   type CreateToolArgs,
   type Tool,
@@ -43,7 +44,6 @@ import {
   useSaveContent,
   useStats,
   useUpdateTool,
-  useVisitorStats,
 } from "../hooks/useQueries";
 import { useAuth } from "../lib/auth";
 import { type GeneratedContent, generateContent } from "../lib/templates";
@@ -69,26 +69,6 @@ const TABS: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     icon: <Wrench className="w-5 h-5" />,
   },
 ];
-
-const DAY_LABELS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-
-function buildChartData(
-  dailyData: Array<[string, bigint]>,
-): { day: string; besucher: number }[] {
-  const map = new Map<string, number>();
-  for (const [key, count] of dailyData) {
-    map.set(key, Number(count));
-  }
-  const result: { day: string; besucher: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    const dayLabel = DAY_LABELS[d.getDay()];
-    result.push({ day: dayLabel, besucher: map.get(key) ?? 0 });
-  }
-  return result;
-}
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
   const handleCopy = () => {
@@ -535,7 +515,7 @@ export default function Admin() {
     useAuth();
 
   const { data: stats, isLoading: statsLoading } = useStats();
-  const { data: visitorStatsData } = useVisitorStats();
+  const localAnalytics = getAnalytics();
   const { data: allHistory, isLoading: historyLoading } = useAllHistory();
   const deleteContent = useDeleteContent();
   const bulkDelete = useBulkDelete();
@@ -1044,7 +1024,17 @@ export default function Admin() {
                   <Users className="w-4 h-4 text-[#00e5ff] absolute top-4 right-4" />
                   <p className="text-[#93a4b6] text-xs mb-2">Gesamtbesucher</p>
                   <p className="text-3xl font-black text-[#00e5ff]">
-                    {String(visitorStatsData?.totalVisits ?? 0)}
+                    {localAnalytics.totalVisitors}
+                  </p>
+                </div>
+                <div
+                  data-ocid="admin.visitor.card"
+                  className="glow-card p-5 relative"
+                >
+                  <Eye className="w-4 h-4 text-[#00e5ff] absolute top-4 right-4" />
+                  <p className="text-[#93a4b6] text-xs mb-2">Heute</p>
+                  <p className="text-3xl font-black text-[#00e5ff]">
+                    {localAnalytics.visitorsToday}
                   </p>
                 </div>
                 <div
@@ -1054,12 +1044,7 @@ export default function Admin() {
                   <UserPlus className="w-4 h-4 text-[#00e5ff] absolute top-4 right-4" />
                   <p className="text-[#93a4b6] text-xs mb-2">Diese Woche</p>
                   <p className="text-3xl font-black text-[#00e5ff]">
-                    {String(
-                      (visitorStatsData?.dailyData ?? []).reduce(
-                        (sum, [, c]) => sum + Number(c),
-                        0,
-                      ),
-                    )}
+                    {localAnalytics.visitorsThisWeek}
                   </p>
                 </div>
                 <div
@@ -1067,23 +1052,9 @@ export default function Admin() {
                   className="glow-card p-5 relative"
                 >
                   <RefreshCw className="w-4 h-4 text-[#00e5ff] absolute top-4 right-4" />
-                  <p className="text-[#93a4b6] text-xs mb-2">Heute</p>
-                  <p className="text-3xl font-black text-[#00e5ff]">
-                    {String(
-                      (visitorStatsData?.dailyData ?? []).find(
-                        ([k]) => k === new Date().toISOString().slice(0, 10),
-                      )?.[1] ?? 0,
-                    )}
-                  </p>
-                </div>
-                <div
-                  data-ocid="admin.visitor.card"
-                  className="glow-card p-5 relative"
-                >
-                  <Eye className="w-4 h-4 text-[#00e5ff] absolute top-4 right-4" />
                   <p className="text-[#93a4b6] text-xs mb-2">Seitenaufrufe</p>
                   <p className="text-3xl font-black text-[#00e5ff]">
-                    {String(visitorStatsData?.totalVisits ?? 0)}
+                    {localAnalytics.pageViews}
                   </p>
                 </div>
               </div>
@@ -1094,7 +1065,7 @@ export default function Admin() {
                 </h2>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart
-                    data={buildChartData(visitorStatsData?.dailyData ?? [])}
+                    data={localAnalytics.dailyChartData}
                     margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
                   >
                     <XAxis
