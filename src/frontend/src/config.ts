@@ -27,57 +27,96 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
-let configCache: Config | null = null;
+// NO module-level config cache.
+// env.json is always fetched fresh with cache:no-store so the frontend
+// always connects to the canister from the most recent deploy.
+// A stale in-memory cache was the root cause of "canister stopped" errors
+// after frontend-only deploys.
 
 export async function loadConfig(): Promise<Config> {
-  if (configCache) {
-    return configCache;
-  }
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
-  try {
-    const response = await fetch(`${baseUrl}env.json`);
-    const config = (await response.json()) as JsonConfig;
-    if (!backendCanisterId && config.backend_canister_id === "undefined") {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
-    }
 
-    const fullConfig = {
-      backend_host:
-        config.backend_host === "undefined" ? undefined : config.backend_host,
-      backend_canister_id: (config.backend_canister_id === "undefined"
-        ? backendCanisterId
-        : config.backend_canister_id) as string,
-      storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
-      bucket_name: DEFAULT_BUCKET_NAME,
-      project_id:
-        config.project_id !== "undefined"
-          ? config.project_id
-          : DEFAULT_PROJECT_ID,
-      ii_derivation_origin:
-        config.ii_derivation_origin === "undefined"
-          ? undefined
-          : config.ii_derivation_origin,
-    };
-    configCache = fullConfig;
-    return fullConfig;
-  } catch {
-    if (!backendCanisterId) {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
+  // Retry loop: env.json can briefly return "undefined" values right after a
+  // deploy while the CDN propagates. Retry up to 4 times with 1s pause.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}env.json`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      });
+      const config = (await response.json()) as JsonConfig;
+
+      const resolvedCanisterId =
+        config.backend_canister_id !== "undefined"
+          ? config.backend_canister_id
+          : backendCanisterId;
+
+      if (!resolvedCanisterId || resolvedCanisterId === "undefined") {
+        if (attempt < 3) {
+          console.warn(
+            `[config] env.json returned undefined canister ID (attempt ${attempt + 1}/4), retrying in 1s...`,
+          );
+          await new Promise((r) => setTimeout(r, 1000));
+          continue;
+        }
+        console.error("[config] CANISTER_ID_BACKEND is not set after retries");
+        throw new Error("CANISTER_ID_BACKEND is not set");
+      }
+
+      const fullConfig: Config = {
+        backend_host:
+          config.backend_host === "undefined" ? undefined : config.backend_host,
+        backend_canister_id: resolvedCanisterId,
+        storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
+        bucket_name: DEFAULT_BUCKET_NAME,
+        project_id:
+          config.project_id !== "undefined"
+            ? config.project_id
+            : DEFAULT_PROJECT_ID,
+        ii_derivation_origin:
+          config.ii_derivation_origin === "undefined"
+            ? undefined
+            : config.ii_derivation_origin,
+      };
+
+      console.log(
+        `[config] Backend canister ID: ${fullConfig.backend_canister_id}`,
+      );
+      return fullConfig;
+    } catch (err) {
+      // If it's a retryable "undefined" error and we haven't exhausted retries, loop.
+      const msg = String(err);
+      if (msg.includes("CANISTER_ID_BACKEND is not set") && attempt < 3) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      // Network failure or final attempt — fall through to the fallback below.
+      if (attempt === 3 || !msg.includes("CANISTER_ID_BACKEND")) {
+        if (!backendCanisterId) {
+          console.error("[config] CANISTER_ID_BACKEND is not set");
+          throw new Error("CANISTER_ID_BACKEND is not set");
+        }
+        const fallbackConfig: Config = {
+          backend_host: undefined,
+          backend_canister_id: backendCanisterId,
+          storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
+          bucket_name: DEFAULT_BUCKET_NAME,
+          project_id: DEFAULT_PROJECT_ID,
+          ii_derivation_origin: undefined,
+        };
+        console.warn(
+          "[config] Fallback config used, canister ID:",
+          fallbackConfig.backend_canister_id,
+        );
+        return fallbackConfig;
+      }
     }
-    const fallbackConfig = {
-      backend_host: undefined,
-      backend_canister_id: backendCanisterId,
-      storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
-      bucket_name: DEFAULT_BUCKET_NAME,
-      project_id: DEFAULT_PROJECT_ID,
-      ii_derivation_origin: undefined,
-    };
-    return fallbackConfig;
   }
+
+  // Should never reach here, but TypeScript needs a return.
+  throw new Error("[config] loadConfig: unexpected exit from retry loop");
 }
 
 function extractAgentErrorMessage(error: string): string {
@@ -99,17 +138,12 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
   }
 
   try {
-    // If VITE_USE_MOCK is enabled, try to load a mock backend module *if it exists*.
-    // We use import.meta.glob so builds don't fail when the mock file is absent.
     const mockModules = import.meta.glob("./mocks/backend.{ts,tsx,js,jsx}");
-
     const path = Object.keys(mockModules)[0];
     if (!path) return null;
-
     const mod = (await mockModules[path]()) as {
       mockBackend?: backendInterface;
     };
-
     return mod.mockBackend ?? null;
   } catch {
     return null;
@@ -119,12 +153,12 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
 export async function createActorWithConfig(
   options?: CreateActorOptions,
 ): Promise<backendInterface> {
-  // Attempt to load mock backend if enabled
   const mock = await maybeLoadMockBackend();
   if (mock) {
     return mock;
   }
 
+  // Always load config fresh — no module-level cache.
   const config = await loadConfig();
   const resolvedOptions = options ?? {};
   const agent = new HttpAgent({
