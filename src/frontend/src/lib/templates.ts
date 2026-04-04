@@ -1,9 +1,18 @@
+export interface ReelSlide {
+  id: string;
+  slide1: string;
+  slide2: string;
+  slide3: string;
+  slide4: string;
+}
+
 export interface GeneratedContent {
   hooks: string[];
   script: string;
   canvaTips: string;
   caption: string;
   hashtags: string[];
+  reelSlides?: ReelSlide[];
 }
 
 function pick<T>(arr: T[]): T {
@@ -92,6 +101,32 @@ const hashtagSets = [
   ],
 ];
 
+// Reel slide variants: Hook → Problem → Lösung → CTA
+// Each slide: max 6–8 words, last slide always "👉 Link in Bio"
+const reelSlideVariants: Array<(t: string) => ReelSlide> = [
+  (t: string) => ({
+    id: "v1",
+    slide1: `Kennst du das Problem mit ${t}?`,
+    slide2: "Die meisten machen dabei einen Fehler.",
+    slide3: `${t} richtig nutzen – so geht's.`,
+    slide4: "👉 Link in Bio",
+  }),
+  (t: string) => ({
+    id: "v2",
+    slide1: `${t} verändert gerade alles. Wirklich.`,
+    slide2: `Ohne ${t} verlierst du täglich Zeit.`,
+    slide3: `Mit ${t} sparst du Stunden – sofort.`,
+    slide4: "👉 Link in Bio",
+  }),
+  (t: string) => ({
+    id: "v3",
+    slide1: `Das niemand dir über ${t} sagt.`,
+    slide2: "Falsch gestartet – und dann frustriert aufgehört.",
+    slide3: `Mein einfacher Einstieg in ${t} – hier.`,
+    slide4: "👉 Link in Bio",
+  }),
+];
+
 export function generateContent(topic: string): GeneratedContent {
   const t = topic.trim() || "dieses Thema";
   const selectedHookTemplates = shuffle(hookTemplates).slice(0, 3);
@@ -100,5 +135,6 @@ export function generateContent(topic: string): GeneratedContent {
   const canvaTips = pick(canvaTemplates)(t);
   const caption = pick(captionTemplates)(t);
   const hashtags = pick(hashtagSets)(t);
-  return { hooks, script, canvaTips, caption, hashtags };
+  const reelSlides = reelSlideVariants.map((fn) => fn(t));
+  return { hooks, script, canvaTips, caption, hashtags, reelSlides };
 }

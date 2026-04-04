@@ -157,6 +157,62 @@ export default function ContentGenerator({
                 ))}
               </div>
             </div>
+
+            {/* Reel Slides */}
+            {content.reelSlides && content.reelSlides.length > 0 && (
+              <div
+                data-ocid="generator.card"
+                className="glow-card p-6 md:col-span-2"
+              >
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  🎬{" "}
+                  <span className="text-[#00e5ff]">
+                    Reel Slides (Direkt nutzbar)
+                  </span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {content.reelSlides.map((reel, videoIdx) => {
+                    const slides = [
+                      reel.slide1,
+                      reel.slide2,
+                      reel.slide3,
+                      reel.slide4,
+                    ];
+                    return (
+                      <div
+                        key={reel.id}
+                        className="bg-[rgba(0,229,255,0.04)] border border-[rgba(0,229,255,0.15)] rounded-xl p-4 flex flex-col gap-3"
+                      >
+                        <p className="text-[#00e5ff] font-bold text-xs uppercase tracking-widest mb-1">
+                          Video {videoIdx + 1}
+                        </p>
+                        {slides.map((slide, slideIdx) => (
+                          <div
+                            key={`${reel.id}-slide-${slideIdx + 1}`}
+                            className="flex gap-2 items-start"
+                          >
+                            <span className="text-[#00e5ff] font-bold text-xs mt-0.5 min-w-[52px]">
+                              Slide {slideIdx + 1}:
+                            </span>
+                            <p className="text-[#c8d8e8] text-sm leading-snug">
+                              {slide}
+                            </p>
+                          </div>
+                        ))}
+                        <div className="mt-3 pt-3 border-t border-[rgba(0,229,255,0.1)]">
+                          <p className="text-[#4a6070] text-xs font-semibold mb-1">
+                            Copy für Canva:
+                          </p>
+                          <p className="text-[#c8d8e8] text-xs leading-relaxed break-words">
+                            {slides.join(" | ")}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
