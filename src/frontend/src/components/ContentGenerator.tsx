@@ -213,6 +213,97 @@ export default function ContentGenerator({
                 </div>
               </div>
             )}
+
+            {/* Wisdom Reels – Lebensweisheiten */}
+            {content.wisdomReels && content.wisdomReels.length > 0 && (
+              <div
+                data-ocid="generator.card"
+                className="glow-card p-6 md:col-span-2"
+              >
+                <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                  ✨{" "}
+                  <span className="text-[#00e5ff]">
+                    Reel Inhalte (Lebensweisheiten)
+                  </span>
+                </h3>
+                <p className="text-[#4a6070] text-xs mb-6">
+                  Virale Reel-Varianten basierend auf echten Gedanken –
+                  emotional, modern, ohne Tool-Name
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {content.wisdomReels.map((reel, idx) => {
+                    const slides = [
+                      reel.slide1,
+                      reel.slide2,
+                      reel.slide3,
+                      reel.slide4,
+                    ];
+                    return (
+                      <div
+                        key={reel.id}
+                        className="bg-[rgba(255,214,0,0.03)] border border-[rgba(255,214,0,0.15)] rounded-xl p-4 flex flex-col gap-3"
+                      >
+                        <p className="text-[#ffd700] font-bold text-xs uppercase tracking-widest mb-1">
+                          Variante {idx + 1}
+                        </p>
+
+                        {/* Slides */}
+                        {slides.map((slide, slideIdx) => (
+                          <div
+                            key={`${reel.id}-s${slideIdx}`}
+                            className="flex gap-2 items-start"
+                          >
+                            <span className="text-[#ffd700] font-bold text-xs mt-0.5 min-w-[52px]">
+                              Slide {slideIdx + 1}:
+                            </span>
+                            <p className="text-[#c8d8e8] text-sm leading-snug">
+                              {slide}
+                            </p>
+                          </div>
+                        ))}
+
+                        {/* Copy für Canva */}
+                        <div className="mt-3 pt-3 border-t border-[rgba(255,214,0,0.1)]">
+                          <p className="text-[#4a6070] text-xs font-semibold mb-1">
+                            Copy für Canva:
+                          </p>
+                          <p className="text-[#c8d8e8] text-xs leading-relaxed break-words">
+                            {reel.canvaCopy}
+                          </p>
+                        </div>
+
+                        {/* Kurz-Caption */}
+                        <div className="mt-1 pt-3 border-t border-[rgba(255,214,0,0.1)]">
+                          <p className="text-[#4a6070] text-xs font-semibold mb-1">
+                            Kurz-Caption:
+                          </p>
+                          <p className="text-[#c8d8e8] text-xs leading-relaxed whitespace-pre-wrap">
+                            {reel.caption}
+                          </p>
+                        </div>
+
+                        {/* Hashtags */}
+                        <div className="mt-1 pt-3 border-t border-[rgba(255,214,0,0.1)]">
+                          <p className="text-[#4a6070] text-xs font-semibold mb-2">
+                            Hashtags:
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {reel.hashtags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(255,214,0,0.07)] border border-[rgba(255,214,0,0.18)] text-[#ffd700]"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

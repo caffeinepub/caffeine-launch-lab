@@ -6,6 +6,17 @@ export interface ReelSlide {
   slide4: string;
 }
 
+export interface WisdomReel {
+  id: string;
+  slide1: string;
+  slide2: string;
+  slide3: string;
+  slide4: string;
+  canvaCopy: string;
+  caption: string;
+  hashtags: string[];
+}
+
 export interface GeneratedContent {
   hooks: string[];
   script: string;
@@ -13,6 +24,7 @@ export interface GeneratedContent {
   caption: string;
   hashtags: string[];
   reelSlides?: ReelSlide[];
+  wisdomReels?: WisdomReel[];
 }
 
 function pick<T>(arr: T[]): T {
@@ -127,6 +139,160 @@ const reelSlideVariants: Array<(t: string) => ReelSlide> = [
   }),
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WISDOM REELS – Lebensweisheiten als virale Reel-Inhalte
+// Struktur: Hook (Weisheit) → Problem/Realität → Verbindung zur Lösung → CTA
+// Regeln: modern, emotional, keine Namen, 6–10 Wörter pro Slide, kein Tool-Name
+// ─────────────────────────────────────────────────────────────────────────────
+
+const wisdomReelPool: Array<{
+  slide1: string;
+  slide2: string;
+  slide3: string;
+  caption: string;
+  hashtags: string[];
+}> = [
+  {
+    slide1: "Wer wartet, verliert – immer.",
+    slide2: "Du weißt genug. Du fängst nur nicht an.",
+    slide3: "Der erste Schritt ist schon das Werkzeug.",
+    caption:
+      "Das Warten auf den richtigen Moment ist die größte Lüge, die wir uns selbst erzählen. Wer anfängt, findet den Weg. Wer wartet, findet Ausreden.\n\n👉 Link in Bio",
+    hashtags: ["mindset", "lebensweisheit", "wachstum", "motivation", "reels"],
+  },
+  {
+    slide1: "Einfach ist nicht dasselbe wie leicht.",
+    slide2: "Die Lösung liegt oft direkt vor dir.",
+    slide3: "Du brauchst kein Wunder. Du brauchst ein System.",
+    caption:
+      "Wir suchen nach komplizierten Antworten – dabei ist die Wahrheit fast immer einfach. Einfach zu sehen. Schwer umzusetzen. Aber möglich.\n\n👉 Link in Bio",
+    hashtags: [
+      "mindset",
+      "klarheit",
+      "produktivität",
+      "onlinebusiness",
+      "motivation",
+    ],
+  },
+  {
+    slide1: "Dein Gehirn lügt dich täglich an.",
+    slide2: 'Es sagt: "Nicht jetzt." Du glaubst es.',
+    slide3: "Das Richtige fühlt sich selten richtig an.",
+    caption:
+      "Jedes Mal, wenn du dich kleiner machst als du bist, glaubt dein Gehirn, es schützt dich. Tut es nicht. Es hält dich nur auf.\n\n👉 Link in Bio",
+    hashtags: [
+      "selfawareness",
+      "mindset",
+      "lebensweisheit",
+      "wachstum",
+      "psychologie",
+    ],
+  },
+  {
+    slide1: "Niemand erinnert sich an deine Ausreden.",
+    slide2: "Alle erinnern sich an dein Ergebnis.",
+    slide3: "Werkzeuge entscheiden, wer schneller ankommt.",
+    caption:
+      "Am Ende zählt nicht, wie schwer es war. Es zählt, was du daraus gemacht hast. Die richtigen Mittel ändern alles.\n\n👉 Link in Bio",
+    hashtags: ["erfolg", "mindset", "motivation", "creator", "reels"],
+  },
+  {
+    slide1: "Komfort ist teuer. Er kostet dein Potenzial.",
+    slide2: "Stillstand fühlt sich sicher an. Ist er nicht.",
+    slide3: "Veränderung beginnt mit einem anderen Werkzeug.",
+    caption:
+      "Wer sich wohl fühlt, wächst nicht. Wer wächst, braucht manchmal nur einen neuen Ansatz – und den Mut, ihn auszuprobieren.\n\n👉 Link in Bio",
+    hashtags: ["motivation", "wachstum", "mindset", "lebensweisheit", "viral"],
+  },
+  {
+    slide1: "Du bist nicht zu spät. Du denkst nur zu klein.",
+    slide2: "Die meisten geben auf, kurz vor dem Durchbruch.",
+    slide3: "Das Richtige Tool bringt dich über die Linie.",
+    caption:
+      "Timing ist keine Ausrede. Wer heute anfängt, ist morgen schon weiter als alle, die noch warten. Der Moment ist jetzt.\n\n👉 Link in Bio",
+    hashtags: [
+      "motivation",
+      "nebeneinkommen",
+      "onlinebusiness",
+      "mindset",
+      "reels",
+    ],
+  },
+  {
+    slide1: "Vergleiche töten leise deinen Fortschritt.",
+    slide2: "Du läufst die falsche Strecke – mit fremden Schuhen.",
+    slide3: "Finde dein System. Nicht das von anderen.",
+    caption:
+      "Wer immer schaut, was andere tun, verliert den Blick für den eigenen Weg. Dein Weg braucht dein Tempo – und die richtigen Mittel.\n\n👉 Link in Bio",
+    hashtags: [
+      "selfgrowth",
+      "mindset",
+      "lebensweisheit",
+      "klarheit",
+      "motivation",
+    ],
+  },
+  {
+    slide1: "Wissen ohne Handlung ist nur Unterhaltung.",
+    slide2: "Du weißt schon genug. Du brauchst den Start.",
+    slide3: "Ein gutes Werkzeug macht aus Wissen Ergebnis.",
+    caption:
+      "Die meisten Menschen haben genug Ideen. Was fehlt, ist das erste ehrliche Tun. Nicht perfekt – einfach anfangen.\n\n👉 Link in Bio",
+    hashtags: [
+      "produktivität",
+      "onlinebusiness",
+      "motivation",
+      "mindset",
+      "creator",
+    ],
+  },
+  {
+    slide1: "Zeit läuft. Mit oder ohne dich.",
+    slide2: "In einem Jahr wirst du dir wünschen, du hättest heute begonnen.",
+    slide3: "Smarte Tools machen aus Stunden Minuten.",
+    caption:
+      "Ein Jahr geht schnell vorbei. Die Frage ist nicht ob – sondern wofür du es nutzt. Wer heute startet, gewinnt morgen Zeit zurück.\n\n👉 Link in Bio",
+    hashtags: ["zeitmanagement", "mindset", "wachstum", "motivation", "viral"],
+  },
+];
+
+function generateWisdomReels(topic: string): WisdomReel[] {
+  const t = topic.trim() || "dieses Thema";
+  const pool = shuffle(wisdomReelPool);
+  // Pick 3 distinct variants
+  const selected = pool.slice(0, 3);
+
+  // Inject topic into slide3 and caption where it adds context naturally
+  const topicInjections: Array<
+    (slide3: string, caption: string) => { slide3: string; caption: string }
+  > = [
+    (s3, cap) => ({
+      slide3: s3
+        .replace("Werkzeug", `Tool für ${t}`)
+        .replace("System", `System für ${t}`),
+      caption: cap,
+    }),
+    (s3, cap) => ({ slide3: s3, caption: cap }),
+    (s3, cap) => ({ slide3: s3, caption: cap }),
+  ];
+
+  return selected.map((variant, idx) => {
+    const injection = topicInjections[idx % topicInjections.length];
+    const { slide3, caption } = injection(variant.slide3, variant.caption);
+    const slides = [variant.slide1, variant.slide2, slide3, "👉 Link in Bio"];
+    return {
+      id: `wisdom-${idx + 1}`,
+      slide1: variant.slide1,
+      slide2: variant.slide2,
+      slide3: slide3,
+      slide4: "👉 Link in Bio",
+      canvaCopy: slides.join(" | "),
+      caption: caption,
+      hashtags: variant.hashtags,
+    };
+  });
+}
+
 export function generateContent(topic: string): GeneratedContent {
   const t = topic.trim() || "dieses Thema";
   const selectedHookTemplates = shuffle(hookTemplates).slice(0, 3);
@@ -136,5 +302,14 @@ export function generateContent(topic: string): GeneratedContent {
   const caption = pick(captionTemplates)(t);
   const hashtags = pick(hashtagSets)(t);
   const reelSlides = reelSlideVariants.map((fn) => fn(t));
-  return { hooks, script, canvaTips, caption, hashtags, reelSlides };
+  const wisdomReels = generateWisdomReels(t);
+  return {
+    hooks,
+    script,
+    canvaTips,
+    caption,
+    hashtags,
+    reelSlides,
+    wisdomReels,
+  };
 }
