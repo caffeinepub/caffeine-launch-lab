@@ -27,48 +27,78 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
-let configCache: Config | null = null;
+// IMPORTANT: No module-level configCache.
+// The old configCache caused the frontend to reuse a stale/broken canister ID
+// after a deploy (even frontend-only). Now env.json is always fetched fresh
+// with cache:"no-store" so the current deployed canister ID is always used.
 
 export async function loadConfig(): Promise<Config> {
-  if (configCache) {
-    return configCache;
-  }
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
-  try {
-    const response = await fetch(`${baseUrl}env.json`);
-    const config = (await response.json()) as JsonConfig;
-    if (!backendCanisterId && config.backend_canister_id === "undefined") {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
-    }
 
-    const fullConfig = {
-      backend_host:
-        config.backend_host === "undefined" ? undefined : config.backend_host,
-      backend_canister_id: (config.backend_canister_id === "undefined"
-        ? backendCanisterId
-        : config.backend_canister_id) as string,
-      storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
-      bucket_name: DEFAULT_BUCKET_NAME,
-      project_id:
-        config.project_id !== "undefined"
-          ? config.project_id
-          : DEFAULT_PROJECT_ID,
-      ii_derivation_origin:
-        config.ii_derivation_origin === "undefined"
-          ? undefined
-          : config.ii_derivation_origin,
-    };
-    configCache = fullConfig;
-    return fullConfig;
-  } catch {
-    if (!backendCanisterId) {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
+  // Retry loop: env.json may briefly return "undefined" right after a deploy
+  // while the CDN propagates. Retry up to 4 times with 1-second delay.
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}env.json`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      });
+      const config = (await response.json()) as JsonConfig;
+
+      const resolvedCanisterId =
+        config.backend_canister_id !== "undefined"
+          ? config.backend_canister_id
+          : backendCanisterId;
+
+      if (!resolvedCanisterId || resolvedCanisterId === "undefined") {
+        // env.json not yet propagated — wait and retry
+        if (attempt < 3) {
+          console.warn(
+            `[config] env.json returned "undefined" canister ID (attempt ${attempt + 1}/4), retrying in 1s...`,
+          );
+          await new Promise((r) => setTimeout(r, 1000));
+          continue;
+        }
+        throw new Error("CANISTER_ID_BACKEND is not set");
+      }
+
+      const fullConfig: Config = {
+        backend_host:
+          config.backend_host === "undefined" ? undefined : config.backend_host,
+        backend_canister_id: resolvedCanisterId,
+        storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
+        bucket_name: DEFAULT_BUCKET_NAME,
+        project_id:
+          config.project_id !== "undefined"
+            ? config.project_id
+            : DEFAULT_PROJECT_ID,
+        ii_derivation_origin:
+          config.ii_derivation_origin === "undefined"
+            ? undefined
+            : config.ii_derivation_origin,
+      };
+
+      console.log(
+        `[config] Canister ID geladen: ${fullConfig.backend_canister_id} (host: ${fullConfig.backend_host ?? "mainnet"})`,
+      );
+      return fullConfig;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 1000));
+      }
     }
-    const fallbackConfig = {
+  }
+
+  // Absolute fallback: use build-time env var if available
+  if (backendCanisterId && backendCanisterId !== "undefined") {
+    console.warn(
+      `[config] Fallback auf build-time Canister ID: ${backendCanisterId}`,
+    );
+    return {
       backend_host: undefined,
       backend_canister_id: backendCanisterId,
       storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
@@ -76,8 +106,9 @@ export async function loadConfig(): Promise<Config> {
       project_id: DEFAULT_PROJECT_ID,
       ii_derivation_origin: undefined,
     };
-    return fallbackConfig;
   }
+
+  throw lastError ?? new Error("CANISTER_ID_BACKEND is not set");
 }
 
 function extractAgentErrorMessage(error: string): string {
@@ -99,17 +130,12 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
   }
 
   try {
-    // If VITE_USE_MOCK is enabled, try to load a mock backend module *if it exists*.
-    // We use import.meta.glob so builds don't fail when the mock file is absent.
     const mockModules = import.meta.glob("./mocks/backend.{ts,tsx,js,jsx}");
-
     const path = Object.keys(mockModules)[0];
     if (!path) return null;
-
     const mod = (await mockModules[path]()) as {
       mockBackend?: backendInterface;
     };
-
     return mod.mockBackend ?? null;
   } catch {
     return null;
@@ -119,12 +145,12 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
 export async function createActorWithConfig(
   options?: CreateActorOptions,
 ): Promise<backendInterface> {
-  // Attempt to load mock backend if enabled
   const mock = await maybeLoadMockBackend();
   if (mock) {
     return mock;
   }
 
+  // Always load config fresh — no module-level cache
   const config = await loadConfig();
   const resolvedOptions = options ?? {};
   const agent = new HttpAgent({

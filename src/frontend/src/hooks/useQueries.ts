@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ContentRecord, Stats } from "../backend";
+import { loadConfig } from "../config";
 import { useActor } from "./useActor";
 import { useAnonActor } from "./useAnonActor";
 
@@ -26,6 +27,17 @@ function friendlyError(e: unknown, context: string): string {
     return "Netzwerkfehler – bitte Internetverbindung prüfen.";
   }
   return `Fehler in ${context}: ${msg}`;
+}
+
+async function logCanisterId(context: string) {
+  try {
+    const cfg = await loadConfig();
+    console.log(
+      `[${context}] Lese von Canister ID: ${cfg.backend_canister_id}`,
+    );
+  } catch {
+    // ignore
+  }
 }
 
 export function useMyHistory() {
@@ -203,13 +215,14 @@ export function usePublicTools() {
     queryKey: ["publicTools"],
     queryFn: async () => {
       if (!anonActor) {
-        console.warn("[usePublicTools] anonActor not ready");
+        console.warn("[usePublicTools] anonActor nicht bereit");
         throw new Error("Actor nicht bereit");
       }
+      await logCanisterId("usePublicTools");
       try {
         const result = await (anonActor as any).getPublicTools();
         if (!Array.isArray(result)) {
-          console.error("[usePublicTools] unexpected result:", result);
+          console.error("[usePublicTools] Unerwartetes Ergebnis:", result);
           return [];
         }
         console.log(
@@ -217,17 +230,12 @@ export function usePublicTools() {
         );
         return result.map(normalizeTool);
       } catch (e) {
-        console.error(
-          "[usePublicTools] Fehler beim Laden der öffentlichen Tools:",
-          e,
-        );
-        // If canister is stopped, reset the anon actor so it's recreated on next retry
+        console.error("[usePublicTools] Fehler beim Laden:", e);
         if (isCanisterStopped(e)) {
           console.log(
-            "[usePublicTools] Canister stopped — resetting actor for retry",
+            "[usePublicTools] Canister gestoppt – Actor wird neu erstellt",
           );
           resetAnonActor();
-          // Also invalidate tool queries so they retry with fresh actor
           queryClient.invalidateQueries({ queryKey: ["publicTools"] });
           queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
         }
@@ -238,7 +246,6 @@ export function usePublicTools() {
     retry: 5,
     retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 30000),
     placeholderData: (prev) => prev,
-    // staleTime: 0 ensures tools are always fresh after canister restart
     staleTime: 0,
   });
 }
@@ -250,26 +257,28 @@ export function useAllToolsAdmin() {
     queryKey: ["allToolsAdmin"],
     queryFn: async () => {
       if (!anonActor) {
-        console.warn("[useAllToolsAdmin] anonActor not ready, waiting...");
+        console.warn("[useAllToolsAdmin] anonActor nicht bereit, warte...");
         throw new Error("Actor nicht bereit – bitte kurz warten");
       }
+      await logCanisterId("useAllToolsAdmin");
       try {
         const result = await (anonActor as any).getAllToolsAdmin();
         if (!Array.isArray(result)) {
           console.error(
-            "[useAllToolsAdmin] unerwartetes Ergebnis vom Backend:",
+            "[useAllToolsAdmin] Unerwartetes Ergebnis vom Backend:",
             result,
           );
           throw new Error("Ungültiges Ergebnis vom Backend");
         }
-        console.log(`[useAllToolsAdmin] ${result.length} Tools geladen`);
+        console.log(
+          `[useAllToolsAdmin] ${result.length} Tools geladen (persistent im Backend)`,
+        );
         return result.map(normalizeTool);
       } catch (e) {
-        console.error("[useAllToolsAdmin] Fehler beim Laden der Tools:", e);
-        // If canister is stopped, reset the anon actor so it's recreated on next retry
+        console.error("[useAllToolsAdmin] Fehler beim Laden:", e);
         if (isCanisterStopped(e)) {
           console.log(
-            "[useAllToolsAdmin] Canister stopped — resetting actor for retry",
+            "[useAllToolsAdmin] Canister gestoppt – Actor wird neu erstellt",
           );
           resetAnonActor();
           queryClient.invalidateQueries({ queryKey: ["publicTools"] });
@@ -292,16 +301,22 @@ export function useCreateTool() {
   return useMutation({
     mutationFn: async (args: CreateToolArgs) => {
       if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      await logCanisterId("useCreateTool");
       try {
         const result = await (actor as any).createTool(args);
-        console.log("[useCreateTool] Tool erstellt, ID:", result);
+        console.log(
+          `[useCreateTool] Tool erfolgreich persistent gespeichert, ID: ${result}`,
+        );
         return result;
       } catch (e) {
-        console.error("[useCreateTool] Fehler:", e);
+        console.error("[useCreateTool] Speichern fehlgeschlagen:", e);
         throw new Error(friendlyError(e, "createTool"));
       }
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      console.log(
+        `[useCreateTool] Persistenz bestätigt – invalidiere Tool-Cache (ID: ${id})`,
+      );
       queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
       queryClient.invalidateQueries({ queryKey: ["publicTools"] });
     },
@@ -314,9 +329,12 @@ export function useUpdateTool() {
   return useMutation({
     mutationFn: async ({ id, args }: { id: bigint; args: CreateToolArgs }) => {
       if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      await logCanisterId("useUpdateTool");
       try {
         const result = await (actor as any).updateTool(id, args);
-        console.log("[useUpdateTool] Tool aktualisiert:", String(id), result);
+        console.log(
+          `[useUpdateTool] Tool ${String(id)} aktualisiert: ${result}`,
+        );
         return result;
       } catch (e) {
         console.error("[useUpdateTool] Fehler:", e);
@@ -336,9 +354,10 @@ export function useDeleteTool() {
   return useMutation({
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error("Not authenticated – bitte neu einloggen");
+      await logCanisterId("useDeleteTool");
       try {
         const result = await (actor as any).deleteTool(id);
-        console.log("[useDeleteTool] Tool gelöscht:", String(id), result);
+        console.log(`[useDeleteTool] Tool ${String(id)} gelöscht: ${result}`);
         return result;
       } catch (e) {
         console.error("[useDeleteTool] Fehler:", e);

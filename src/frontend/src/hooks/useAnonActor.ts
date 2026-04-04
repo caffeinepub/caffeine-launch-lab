@@ -1,30 +1,29 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { backendInterface } from "../backend";
-import { createActorWithConfig } from "../config";
+import { createActorWithConfig, loadConfig } from "../config";
 
 // Anonymous actor for public/read-only calls.
-// No _initializeAccessControlWithSecret, no auth dependency.
-// Both admin reads and public reads use this to avoid auth timing issues.
-//
-// IMPORTANT: staleTime is intentionally low (0) so that after a canister
-// restart/redeploy the actor is always recreated fresh. The previous 5-minute
-// staleTime caused the broken actor to be reused for 5 minutes after restart.
-//
-// Actor creation itself never throws IC0508. That error only occurs at call
-// time (when getPublicTools/getAllToolsAdmin is called). IC0508 handling
-// belongs in useQueries.ts where the actual canister calls happen.
+// staleTime: 0 — always recreate after invalidation to recover from canister restarts.
+// No module-level cache — config.ts now always fetches env.json fresh.
 
 export function useAnonActor() {
   const query = useQuery<backendInterface>({
     queryKey: ["anonActor"],
     queryFn: async () => {
+      // Log the canister ID this actor will connect to
+      try {
+        const cfg = await loadConfig();
+        console.log(
+          `[useAnonActor] Anonym Actor erstellt | Canister ID: ${cfg.backend_canister_id} | Host: ${cfg.backend_host ?? "mainnet"}`,
+        );
+      } catch (e) {
+        console.warn("[useAnonActor] Konnte Canister-ID nicht lesen:", e);
+      }
       const actor = await createActorWithConfig();
-      console.log("[useAnonActor] Anonymous actor created successfully");
       return actor;
     },
-    // staleTime: 0 = always recreate after invalidation, ensuring post-restart recovery
     staleTime: 0,
-    gcTime: 60 * 1000, // keep in cache for 1 minute
+    gcTime: 60 * 1000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
@@ -34,9 +33,8 @@ export function useAnonActor() {
   return {
     anonActor: query.data || null,
     isLoading: query.isLoading,
-    // Call this to force re-creation of the anonymous actor (e.g. after canister restart)
     resetAnonActor: () => {
-      console.log("[useAnonActor] Resetting anonymous actor (force refetch)");
+      console.log("[useAnonActor] Actor wird zurückgesetzt (force refetch)");
       queryClient.invalidateQueries({ queryKey: ["anonActor"] });
     },
   };
