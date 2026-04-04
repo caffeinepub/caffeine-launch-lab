@@ -197,7 +197,8 @@ function normalizeTool(raw: Record<string, unknown>): Tool {
 }
 
 export function usePublicTools() {
-  const { anonActor } = useAnonActor();
+  const { anonActor, resetAnonActor } = useAnonActor();
+  const queryClient = useQueryClient();
   return useQuery<Tool[]>({
     queryKey: ["publicTools"],
     queryFn: async () => {
@@ -220,18 +221,31 @@ export function usePublicTools() {
           "[usePublicTools] Fehler beim Laden der öffentlichen Tools:",
           e,
         );
+        // If canister is stopped, reset the anon actor so it's recreated on next retry
+        if (isCanisterStopped(e)) {
+          console.log(
+            "[usePublicTools] Canister stopped — resetting actor for retry",
+          );
+          resetAnonActor();
+          // Also invalidate tool queries so they retry with fresh actor
+          queryClient.invalidateQueries({ queryKey: ["publicTools"] });
+          queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
+        }
         throw new Error(friendlyError(e, "getPublicTools"));
       }
     },
     enabled: !!anonActor,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1500 * 2 ** attempt, 10000),
+    retry: 5,
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 30000),
     placeholderData: (prev) => prev,
+    // staleTime: 0 ensures tools are always fresh after canister restart
+    staleTime: 0,
   });
 }
 
 export function useAllToolsAdmin() {
-  const { anonActor } = useAnonActor();
+  const { anonActor, resetAnonActor } = useAnonActor();
+  const queryClient = useQueryClient();
   return useQuery<Tool[]>({
     queryKey: ["allToolsAdmin"],
     queryFn: async () => {
@@ -252,12 +266,21 @@ export function useAllToolsAdmin() {
         return result.map(normalizeTool);
       } catch (e) {
         console.error("[useAllToolsAdmin] Fehler beim Laden der Tools:", e);
+        // If canister is stopped, reset the anon actor so it's recreated on next retry
+        if (isCanisterStopped(e)) {
+          console.log(
+            "[useAllToolsAdmin] Canister stopped — resetting actor for retry",
+          );
+          resetAnonActor();
+          queryClient.invalidateQueries({ queryKey: ["publicTools"] });
+          queryClient.invalidateQueries({ queryKey: ["allToolsAdmin"] });
+        }
         throw new Error(friendlyError(e, "getAllToolsAdmin"));
       }
     },
     enabled: !!anonActor,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    retry: 5,
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 30000),
     placeholderData: (prev) => prev,
     staleTime: 0,
   });

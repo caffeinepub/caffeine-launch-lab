@@ -27,57 +27,79 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
-let configCache: Config | null = null;
+// IMPORTANT: No module-level configCache.
+// Previously, configCache was a module-level singleton that cached the canister ID
+// forever. After a deploy, the cached value from before the deploy was reused,
+// causing the frontend to call the wrong (old/stopped) canister.
+// Now we always fetch env.json fresh with cache: "no-store" so each actor
+// creation gets the current deployed canister ID.
 
-export async function loadConfig(): Promise<Config> {
-  if (configCache) {
-    return configCache;
-  }
+async function fetchEnvConfig(retries = 3): Promise<JsonConfig> {
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
-  try {
-    const response = await fetch(`${baseUrl}env.json`);
-    const config = (await response.json()) as JsonConfig;
-    if (!backendCanisterId && config.backend_canister_id === "undefined") {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
-    }
 
-    const fullConfig = {
-      backend_host:
-        config.backend_host === "undefined" ? undefined : config.backend_host,
-      backend_canister_id: (config.backend_canister_id === "undefined"
-        ? backendCanisterId
-        : config.backend_canister_id) as string,
-      storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
-      bucket_name: DEFAULT_BUCKET_NAME,
-      project_id:
-        config.project_id !== "undefined"
-          ? config.project_id
-          : DEFAULT_PROJECT_ID,
-      ii_derivation_origin:
-        config.ii_derivation_origin === "undefined"
-          ? undefined
-          : config.ii_derivation_origin,
-    };
-    configCache = fullConfig;
-    return fullConfig;
-  } catch {
-    if (!backendCanisterId) {
-      console.error("CANISTER_ID_BACKEND is not set");
-      throw new Error("CANISTER_ID_BACKEND is not set");
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      // cache: "no-store" ensures we always get the freshly deployed env.json,
+      // not a browser-cached version from before the last deployment.
+      const response = await fetch(`${baseUrl}env.json`, {
+        cache: "no-store",
+        headers: { "pragma": "no-cache", "cache-control": "no-cache" },
+      });
+      const config = (await response.json()) as JsonConfig;
+
+      const resolvedId =
+        config.backend_canister_id !== "undefined"
+          ? config.backend_canister_id
+          : backendCanisterId;
+
+      if (!resolvedId) {
+        // env.json has "undefined" and no compile-time fallback — retry
+        if (attempt < retries - 1) {
+          console.warn(
+            `[config] env.json has no canister ID on attempt ${attempt + 1}, retrying...`,
+          );
+          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          continue;
+        }
+        throw new Error("CANISTER_ID_BACKEND is not set in env.json");
+      }
+
+      console.log(`[config] Backend canister ID: ${resolvedId}`);
+      return {
+        ...config,
+        backend_canister_id: resolvedId,
+      };
+    } catch (e: unknown) {
+      const isLast = attempt === retries - 1;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (isLast) throw e;
+      console.warn(`[config] fetch env.json failed (attempt ${attempt + 1}): ${msg}, retrying...`);
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
     }
-    const fallbackConfig = {
-      backend_host: undefined,
-      backend_canister_id: backendCanisterId,
-      storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
-      bucket_name: DEFAULT_BUCKET_NAME,
-      project_id: DEFAULT_PROJECT_ID,
-      ii_derivation_origin: undefined,
-    };
-    return fallbackConfig;
   }
+  throw new Error("[config] Failed to load env.json after retries");
+}
+
+export async function loadConfig(): Promise<Config> {
+  const config = await fetchEnvConfig();
+
+  return {
+    backend_host:
+      config.backend_host === "undefined" ? undefined : config.backend_host,
+    backend_canister_id: config.backend_canister_id,
+    storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
+    bucket_name: DEFAULT_BUCKET_NAME,
+    project_id:
+      config.project_id !== "undefined"
+        ? config.project_id
+        : DEFAULT_PROJECT_ID,
+    ii_derivation_origin:
+      config.ii_derivation_origin === "undefined"
+        ? undefined
+        : config.ii_derivation_origin,
+  };
 }
 
 function extractAgentErrorMessage(error: string): string {
@@ -88,7 +110,7 @@ function extractAgentErrorMessage(error: string): string {
 
 function processError(e: unknown): never {
   if (e && typeof e === "object" && "message" in e) {
-    throw new Error(extractAgentErrorMessage(`${e.message}`));
+    throw new Error(extractAgentErrorMessage(`${(e as { message: string }).message}`));
   }
   throw e;
 }
@@ -99,17 +121,12 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
   }
 
   try {
-    // If VITE_USE_MOCK is enabled, try to load a mock backend module *if it exists*.
-    // We use import.meta.glob so builds don't fail when the mock file is absent.
     const mockModules = import.meta.glob("./mocks/backend.{ts,tsx,js,jsx}");
-
     const path = Object.keys(mockModules)[0];
     if (!path) return null;
-
     const mod = (await mockModules[path]()) as {
       mockBackend?: backendInterface;
     };
-
     return mod.mockBackend ?? null;
   } catch {
     return null;
@@ -119,12 +136,13 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
 export async function createActorWithConfig(
   options?: CreateActorOptions,
 ): Promise<backendInterface> {
-  // Attempt to load mock backend if enabled
   const mock = await maybeLoadMockBackend();
   if (mock) {
     return mock;
   }
 
+  // Always load config fresh — no singleton cache.
+  // This guarantees that after a deploy the new env.json canister ID is used.
   const config = await loadConfig();
   const resolvedOptions = options ?? {};
   const agent = new HttpAgent({

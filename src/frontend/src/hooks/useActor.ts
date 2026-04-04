@@ -15,7 +15,6 @@ export function useActor() {
       const isAuthenticated = !!identity;
 
       if (!isAuthenticated) {
-        // Return anonymous actor if not authenticated
         return await createActorWithConfig();
       }
 
@@ -26,27 +25,37 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
-      const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      // Always wrap in try/catch so a canister error here never blocks the actor.
-      // The actor must always be returned after login, regardless of what
-      // _initializeAccessControlWithSecret does.
+
+      // IMPORTANT: _initializeAccessControlWithSecret MUST be in try/catch.
+      // If this call throws (canister temporarily busy, restarting after deploy,
+      // or any other error), without try/catch the entire queryFn throws and
+      // the actor is never returned — leaving actor=null and causing every
+      // subsequent createTool/updateTool/deleteTool to fail with "Not authenticated".
+      // We always return the actor regardless of whether this init call succeeds.
       try {
+        const adminToken = getSecretParameter("caffeineAdminToken") || "";
         await actor._initializeAccessControlWithSecret(adminToken);
-      } catch (e) {
+      } catch (initErr) {
         console.warn(
           "[useActor] _initializeAccessControlWithSecret failed (non-fatal):",
-          e,
+          initErr,
         );
+        // Continue — the actor is still valid for authenticated calls.
+        // createTool/updateTool/deleteTool check caller.isAnonymous() on the
+        // backend side, which will succeed as long as the user is logged in.
       }
+
       return actor;
     },
-    // Only refetch when identity changes
-    staleTime: Number.POSITIVE_INFINITY,
-    // This will cause the actor to be recreated when the identity changes
+    // staleTime: 0 means after invalidation the actor is always recreated.
+    // This ensures a post-deploy canister restart doesn't leave a stale actor.
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
     enabled: true,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
-  // When the actor changes, invalidate dependent queries
   useEffect(() => {
     if (actorQuery.data) {
       queryClient.invalidateQueries({

@@ -6,9 +6,13 @@ import { createActorWithConfig } from "../config";
 // No _initializeAccessControlWithSecret, no auth dependency.
 // Both admin reads and public reads use this to avoid auth timing issues.
 //
-// NOTE: Actor CREATION never throws IC0508 -- that error only occurs at call time
-// (when getPublicTools/getAllToolsAdmin is actually called). The IC0508 check
-// belongs in useQueries.ts where the actual canister call happens.
+// IMPORTANT: staleTime is intentionally low (0) so that after a canister
+// restart/redeploy the actor is always recreated fresh. The previous 5-minute
+// staleTime caused the broken actor to be reused for 5 minutes after restart.
+//
+// Actor creation itself never throws IC0508. That error only occurs at call
+// time (when getPublicTools/getAllToolsAdmin is called). IC0508 handling
+// belongs in useQueries.ts where the actual canister calls happen.
 
 export function useAnonActor() {
   const query = useQuery<backendInterface>({
@@ -18,8 +22,9 @@ export function useAnonActor() {
       console.log("[useAnonActor] Anonymous actor created successfully");
       return actor;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,
+    // staleTime: 0 = always recreate after invalidation, ensuring post-restart recovery
+    staleTime: 0,
+    gcTime: 60 * 1000, // keep in cache for 1 minute
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
@@ -31,6 +36,7 @@ export function useAnonActor() {
     isLoading: query.isLoading,
     // Call this to force re-creation of the anonymous actor (e.g. after canister restart)
     resetAnonActor: () => {
+      console.log("[useAnonActor] Resetting anonymous actor (force refetch)");
       queryClient.invalidateQueries({ queryKey: ["anonActor"] });
     },
   };

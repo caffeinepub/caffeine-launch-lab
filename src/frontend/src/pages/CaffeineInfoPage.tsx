@@ -193,7 +193,7 @@ export default function CaffeineInfoPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[...publicTools]
                   .sort((a, b) => Number(a.reihenfolge) - Number(b.reihenfolge))
-                  .slice(0, 3)
+                  .filter((tool) => Number(tool.reihenfolge) > 1)
                   .map((tool: Tool) => {
                     const href =
                       tool.affiliateLink.length > 0 && tool.affiliateLink[0]
