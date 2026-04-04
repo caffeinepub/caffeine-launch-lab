@@ -27,12 +27,17 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
+let configCache: Config | null = null;
+
 export async function loadConfig(): Promise<Config> {
+  if (configCache) {
+    return configCache;
+  }
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
   try {
-    const response = await fetch(`${baseUrl}env.json`, { cache: "no-store" });
+    const response = await fetch(`${baseUrl}env.json`);
     const config = (await response.json()) as JsonConfig;
     if (!backendCanisterId && config.backend_canister_id === "undefined") {
       console.error("CANISTER_ID_BACKEND is not set");
@@ -56,6 +61,7 @@ export async function loadConfig(): Promise<Config> {
           ? undefined
           : config.ii_derivation_origin,
     };
+    configCache = fullConfig;
     return fullConfig;
   } catch {
     if (!backendCanisterId) {
