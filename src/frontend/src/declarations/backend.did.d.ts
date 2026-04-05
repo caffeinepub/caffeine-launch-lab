@@ -16,8 +16,6 @@ export interface ContentRecord {
   'caption' : string,
 }
 export interface Stats { 'totalCount' : bigint, 'recentCount' : bigint }
-export interface UserProfile { 'name' : string }
-export type UserRole = { 'admin' : null } | { 'user' : null } | { 'guest' : null };
 export interface Tool {
   'id' : bigint,
   'emoji' : string,
@@ -43,19 +41,18 @@ export interface VisitorStats {
   'totalVisits' : bigint,
   'dailyData' : Array<[string, bigint]>,
 }
+// _SERVICE must match main.mo exactly.
+// Phantom methods (assignCallerUserRole, getCallerUserRole, getCallerUserProfile,
+// getUserProfile, saveCallerUserProfile) that do NOT exist in main.mo have been
+// removed to prevent IC agent validation failures.
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'bulkDelete' : ActorMethod<[Array<bigint>], bigint>,
   'deleteContent' : ActorMethod<[bigint], boolean>,
   'getAllHistory' : ActorMethod<[], Array<ContentRecord>>,
-  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
-  'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getMyHistory' : ActorMethod<[], Array<ContentRecord>>,
   'getStats' : ActorMethod<[], Stats>,
-  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveContent' : ActorMethod<[string, Array<string>, string, string, string, Array<string>], bigint>,
   'getPublicTools' : ActorMethod<[], Array<Tool>>,
   'getAllToolsAdmin' : ActorMethod<[], Array<Tool>>,

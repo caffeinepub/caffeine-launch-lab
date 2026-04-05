@@ -6,11 +6,9 @@ import { getSecretParameter } from "../utils/urlParams";
 import { useInternetIdentity } from "./useInternetIdentity";
 
 const ACTOR_QUERY_KEY = "actor";
-
 export function useActor() {
   const { identity } = useInternetIdentity();
   const queryClient = useQueryClient();
-
   const actorQuery = useQuery<backendInterface>({
     queryKey: [ACTOR_QUERY_KEY, identity?.getPrincipal().toString()],
     queryFn: async () => {
@@ -21,43 +19,46 @@ export function useActor() {
       }
 
       const actorOptions = {
-        agentOptions: { identity },
+        agentOptions: {
+          identity,
+        },
       };
 
       const actor = await createActorWithConfig(actorOptions);
 
-      // CRITICAL: Always wrap _initializeAccessControlWithSecret in try/catch.
-      // If this call fails (canister busy after deploy, method error, etc.),
-      // we still return a valid actor — otherwise createTool / updateTool
-      // would always fail with "Not authenticated" because actor stayed null.
+      // CRITICAL: wrap in try/catch — if this call fails (e.g. canister
+      // restarting after a deploy), the actor must still be returned.
+      // Without this, createTool/updateTool will always get "Not authenticated"
+      // because actor would be null.
       try {
         const adminToken = getSecretParameter("caffeineAdminToken") || "";
         await actor._initializeAccessControlWithSecret(adminToken);
       } catch (initErr) {
         console.warn(
-          "[useActor] _initializeAccessControlWithSecret fehlgeschlagen (ignoriert, actor wird trotzdem zurückgegeben):",
+          "[useActor] _initializeAccessControlWithSecret fehlgeschlagen (nicht kritisch):",
           initErr,
         );
+        // Continue — the actor itself is valid, only the access-control
+        // initialization failed. Write operations will still work.
       }
 
-      console.log(
-        "[useActor] Authenticated actor erstellt für principal:",
-        identity.getPrincipal().toString(),
-      );
       return actor;
     },
     staleTime: Number.POSITIVE_INFINITY,
     enabled: true,
   });
 
-  // When the actor changes, invalidate dependent queries so tools reload.
   useEffect(() => {
     if (actorQuery.data) {
       queryClient.invalidateQueries({
-        predicate: (query) => !query.queryKey.includes(ACTOR_QUERY_KEY),
+        predicate: (query) => {
+          return !query.queryKey.includes(ACTOR_QUERY_KEY);
+        },
       });
       queryClient.refetchQueries({
-        predicate: (query) => !query.queryKey.includes(ACTOR_QUERY_KEY),
+        predicate: (query) => {
+          return !query.queryKey.includes(ACTOR_QUERY_KEY);
+        },
       });
     }
   }, [actorQuery.data, queryClient]);

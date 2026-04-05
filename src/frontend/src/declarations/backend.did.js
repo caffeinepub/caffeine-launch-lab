@@ -4,11 +4,7 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const UserRole = IDL.Variant({
-  'admin' : IDL.Null,
-  'user' : IDL.Null,
-  'guest' : IDL.Null,
-});
+// Types that actually exist in main.mo
 export const ContentRecord = IDL.Record({
   'id' : IDL.Nat,
   'topic' : IDL.Text,
@@ -20,11 +16,12 @@ export const ContentRecord = IDL.Record({
   'timestamp' : IDL.Int,
   'caption' : IDL.Text,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+
 export const Stats = IDL.Record({
   'totalCount' : IDL.Nat,
   'recentCount' : IDL.Nat,
 });
+
 export const Tool = IDL.Record({
   'id' : IDL.Nat,
   'emoji' : IDL.Text,
@@ -36,6 +33,7 @@ export const Tool = IDL.Record({
   'reihenfolge' : IDL.Nat,
   'isPublic' : IDL.Bool,
 });
+
 export const CreateToolArgs = IDL.Record({
   'emoji' : IDL.Text,
   'name' : IDL.Text,
@@ -46,34 +44,42 @@ export const CreateToolArgs = IDL.Record({
   'reihenfolge' : IDL.Nat,
   'isPublic' : IDL.Bool,
 });
+
 export const VisitorStats = IDL.Record({
   'totalVisits' : IDL.Nat,
   'dailyData' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
 });
 
+// IDL service — MUST match main.mo exactly.
+// Phantom methods (assignCallerUserRole, getCallerUserRole, etc.) that do NOT
+// exist in main.mo have been removed. Having them here causes IC agent
+// validation failures that manifest as "canister has no wasm module" or silent
+// actor null errors.
 export const idlService = IDL.Service({
+  // Access control init (authorization module)
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+
+  // Content
   'bulkDelete' : IDL.Func([IDL.Vec(IDL.Nat)], [IDL.Nat], []),
   'deleteContent' : IDL.Func([IDL.Nat], [IDL.Bool], []),
   'getAllHistory' : IDL.Func([], [IDL.Vec(ContentRecord)], ['query']),
-  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getMyHistory' : IDL.Func([], [IDL.Vec(ContentRecord)], ['query']),
   'getStats' : IDL.Func([], [Stats], ['query']),
-  'getUserProfile' : IDL.Func([IDL.Principal], [IDL.Opt(UserProfile)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'saveContent' : IDL.Func(
-      [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
-      [IDL.Nat],
-      [],
-    ),
+    [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
+    [IDL.Nat],
+    [],
+  ),
+
+  // Tools
   'getPublicTools' : IDL.Func([], [IDL.Vec(Tool)], ['query']),
   'getAllToolsAdmin' : IDL.Func([], [IDL.Vec(Tool)], ['query']),
   'createTool' : IDL.Func([CreateToolArgs], [IDL.Nat], []),
   'updateTool' : IDL.Func([IDL.Nat, CreateToolArgs], [IDL.Bool], []),
   'deleteTool' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+
+  // Visitor tracking
   'trackVisit' : IDL.Func([IDL.Text], [], []),
   'getVisitorStats' : IDL.Func([], [VisitorStats], ['query']),
 });

@@ -27,24 +27,28 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
-// NO module-level config cache.
-// env.json is always fetched fresh with cache:no-store so the frontend
-// always connects to the canister from the most recent deploy.
-// A stale in-memory cache was the root cause of "canister stopped" errors
-// after frontend-only deploys.
+// NO module-level cache — env.json must always be read fresh after every deploy.
+// A stale cache here is the #1 cause of "canister has no wasm module" / IC0508
+// errors after frontend-only deployments.
 
 export async function loadConfig(): Promise<Config> {
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
 
-  // Retry loop: env.json can briefly return "undefined" values right after a
-  // deploy while the CDN propagates. Retry up to 4 times with 1s pause.
+  // Retry up to 4 times: env.json can briefly return "undefined" right after a
+  // CDN propagation following a new deployment.
+  let lastError: unknown;
   for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
     try {
+      // cache: "no-store" is critical — the browser must never serve a cached
+      // env.json that contains the old (now-empty) canister ID.
       const response = await fetch(`${baseUrl}env.json`, {
         cache: "no-store",
-        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+        headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
       });
       const config = (await response.json()) as JsonConfig;
 
@@ -54,15 +58,11 @@ export async function loadConfig(): Promise<Config> {
           : backendCanisterId;
 
       if (!resolvedCanisterId || resolvedCanisterId === "undefined") {
-        if (attempt < 3) {
-          console.warn(
-            `[config] env.json returned undefined canister ID (attempt ${attempt + 1}/4), retrying in 1s...`,
-          );
-          await new Promise((r) => setTimeout(r, 1000));
-          continue;
-        }
-        console.error("[config] CANISTER_ID_BACKEND is not set after retries");
-        throw new Error("CANISTER_ID_BACKEND is not set");
+        console.warn(
+          `[config] env.json returned undefined canister ID (attempt ${attempt + 1}/4), retrying…`,
+        );
+        lastError = new Error("CANISTER_ID_BACKEND is not set");
+        continue;
       }
 
       const fullConfig: Config = {
@@ -85,38 +85,27 @@ export async function loadConfig(): Promise<Config> {
         `[config] Backend canister ID: ${fullConfig.backend_canister_id}`,
       );
       return fullConfig;
-    } catch (err) {
-      // If it's a retryable "undefined" error and we haven't exhausted retries, loop.
-      const msg = String(err);
-      if (msg.includes("CANISTER_ID_BACKEND is not set") && attempt < 3) {
-        await new Promise((r) => setTimeout(r, 1000));
-        continue;
-      }
-      // Network failure or final attempt — fall through to the fallback below.
-      if (attempt === 3 || !msg.includes("CANISTER_ID_BACKEND")) {
-        if (!backendCanisterId) {
-          console.error("[config] CANISTER_ID_BACKEND is not set");
-          throw new Error("CANISTER_ID_BACKEND is not set");
-        }
-        const fallbackConfig: Config = {
-          backend_host: undefined,
-          backend_canister_id: backendCanisterId,
-          storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
-          bucket_name: DEFAULT_BUCKET_NAME,
-          project_id: DEFAULT_PROJECT_ID,
-          ii_derivation_origin: undefined,
-        };
-        console.warn(
-          "[config] Fallback config used, canister ID:",
-          fallbackConfig.backend_canister_id,
-        );
-        return fallbackConfig;
-      }
+    } catch (e) {
+      lastError = e;
+      console.warn(`[config] fetch env.json failed (attempt ${attempt + 1}/4):`, e);
     }
   }
 
-  // Should never reach here, but TypeScript needs a return.
-  throw new Error("[config] loadConfig: unexpected exit from retry loop");
+  // Final fallback: use build-time env var if available
+  if (backendCanisterId && backendCanisterId !== "undefined") {
+    console.log(`[config] Fallback to build-time canister ID: ${backendCanisterId}`);
+    return {
+      backend_host: undefined,
+      backend_canister_id: backendCanisterId,
+      storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
+      bucket_name: DEFAULT_BUCKET_NAME,
+      project_id: DEFAULT_PROJECT_ID,
+      ii_derivation_origin: undefined,
+    };
+  }
+
+  console.error("[config] Could not resolve backend canister ID", lastError);
+  throw lastError ?? new Error("CANISTER_ID_BACKEND is not set");
 }
 
 function extractAgentErrorMessage(error: string): string {
@@ -158,7 +147,6 @@ export async function createActorWithConfig(
     return mock;
   }
 
-  // Always load config fresh — no module-level cache.
   const config = await loadConfig();
   const resolvedOptions = options ?? {};
   const agent = new HttpAgent({
