@@ -15,6 +15,7 @@ export function useActor() {
       const isAuthenticated = !!identity;
 
       if (!isAuthenticated) {
+        // Return anonymous actor if not authenticated
         return await createActorWithConfig();
       }
 
@@ -25,29 +26,17 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
-
-      // CRITICAL: wrap in try/catch — if this call fails (e.g. canister
-      // restarting after a deploy), the actor must still be returned.
-      // Without this, createTool/updateTool will always get "Not authenticated"
-      // because actor would be null.
-      try {
-        const adminToken = getSecretParameter("caffeineAdminToken") || "";
-        await actor._initializeAccessControlWithSecret(adminToken);
-      } catch (initErr) {
-        console.warn(
-          "[useActor] _initializeAccessControlWithSecret fehlgeschlagen (nicht kritisch):",
-          initErr,
-        );
-        // Continue — the actor itself is valid, only the access-control
-        // initialization failed. Write operations will still work.
-      }
-
+      const adminToken = getSecretParameter("caffeineAdminToken") || "";
+      await actor._initializeAccessControlWithSecret(adminToken);
       return actor;
     },
+    // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
+    // This will cause the actor to be recreated when the identity changes
     enabled: true,
   });
 
+  // When the actor changes, invalidate dependent queries
   useEffect(() => {
     if (actorQuery.data) {
       queryClient.invalidateQueries({

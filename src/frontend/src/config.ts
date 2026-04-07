@@ -27,74 +27,48 @@ interface Config {
   ii_derivation_origin?: string;
 }
 
-// NO module-level cache — env.json must always be read fresh after every deploy.
-// A stale cache here is the #1 cause of "canister has no wasm module" / IC0508
-// errors after frontend-only deployments.
+let configCache: Config | null = null;
 
 export async function loadConfig(): Promise<Config> {
+  if (configCache) {
+    return configCache;
+  }
   const backendCanisterId = process.env.CANISTER_ID_BACKEND;
   const envBaseUrl = process.env.BASE_URL || "/";
   const baseUrl = envBaseUrl.endsWith("/") ? envBaseUrl : `${envBaseUrl}/`;
-
-  // Retry up to 4 times: env.json can briefly return "undefined" right after a
-  // CDN propagation following a new deployment.
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, 1000));
+  try {
+    const response = await fetch(`${baseUrl}env.json`);
+    const config = (await response.json()) as JsonConfig;
+    if (!backendCanisterId && config.backend_canister_id === "undefined") {
+      console.error("CANISTER_ID_BACKEND is not set");
+      throw new Error("CANISTER_ID_BACKEND is not set");
     }
-    try {
-      // cache: "no-store" is critical — the browser must never serve a cached
-      // env.json that contains the old (now-empty) canister ID.
-      const response = await fetch(`${baseUrl}env.json`, {
-        cache: "no-store",
-        headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
-      });
-      const config = (await response.json()) as JsonConfig;
 
-      const resolvedCanisterId =
-        config.backend_canister_id !== "undefined"
-          ? config.backend_canister_id
-          : backendCanisterId;
-
-      if (!resolvedCanisterId || resolvedCanisterId === "undefined") {
-        console.warn(
-          `[config] env.json returned undefined canister ID (attempt ${attempt + 1}/4), retrying…`,
-        );
-        lastError = new Error("CANISTER_ID_BACKEND is not set");
-        continue;
-      }
-
-      const fullConfig: Config = {
-        backend_host:
-          config.backend_host === "undefined" ? undefined : config.backend_host,
-        backend_canister_id: resolvedCanisterId,
-        storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
-        bucket_name: DEFAULT_BUCKET_NAME,
-        project_id:
-          config.project_id !== "undefined"
-            ? config.project_id
-            : DEFAULT_PROJECT_ID,
-        ii_derivation_origin:
-          config.ii_derivation_origin === "undefined"
-            ? undefined
-            : config.ii_derivation_origin,
-      };
-
-      console.log(
-        `[config] Backend canister ID: ${fullConfig.backend_canister_id}`,
-      );
-      return fullConfig;
-    } catch (e) {
-      lastError = e;
-      console.warn(`[config] fetch env.json failed (attempt ${attempt + 1}/4):`, e);
+    const fullConfig = {
+      backend_host:
+        config.backend_host === "undefined" ? undefined : config.backend_host,
+      backend_canister_id: (config.backend_canister_id === "undefined"
+        ? backendCanisterId
+        : config.backend_canister_id) as string,
+      storage_gateway_url: process.env.STORAGE_GATEWAY_URL ?? "nogateway",
+      bucket_name: DEFAULT_BUCKET_NAME,
+      project_id:
+        config.project_id !== "undefined"
+          ? config.project_id
+          : DEFAULT_PROJECT_ID,
+      ii_derivation_origin:
+        config.ii_derivation_origin === "undefined"
+          ? undefined
+          : config.ii_derivation_origin,
+    };
+    configCache = fullConfig;
+    return fullConfig;
+  } catch {
+    if (!backendCanisterId) {
+      console.error("CANISTER_ID_BACKEND is not set");
+      throw new Error("CANISTER_ID_BACKEND is not set");
     }
-  }
-
-  // Final fallback: use build-time env var if available
-  if (backendCanisterId && backendCanisterId !== "undefined") {
-    console.log(`[config] Fallback to build-time canister ID: ${backendCanisterId}`);
-    return {
+    const fallbackConfig = {
       backend_host: undefined,
       backend_canister_id: backendCanisterId,
       storage_gateway_url: DEFAULT_STORAGE_GATEWAY_URL,
@@ -102,10 +76,8 @@ export async function loadConfig(): Promise<Config> {
       project_id: DEFAULT_PROJECT_ID,
       ii_derivation_origin: undefined,
     };
+    return fallbackConfig;
   }
-
-  console.error("[config] Could not resolve backend canister ID", lastError);
-  throw lastError ?? new Error("CANISTER_ID_BACKEND is not set");
 }
 
 function extractAgentErrorMessage(error: string): string {
@@ -127,12 +99,17 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
   }
 
   try {
+    // If VITE_USE_MOCK is enabled, try to load a mock backend module *if it exists*.
+    // We use import.meta.glob so builds don't fail when the mock file is absent.
     const mockModules = import.meta.glob("./mocks/backend.{ts,tsx,js,jsx}");
+
     const path = Object.keys(mockModules)[0];
     if (!path) return null;
+
     const mod = (await mockModules[path]()) as {
       mockBackend?: backendInterface;
     };
+
     return mod.mockBackend ?? null;
   } catch {
     return null;
@@ -142,6 +119,7 @@ async function maybeLoadMockBackend(): Promise<backendInterface | null> {
 export async function createActorWithConfig(
   options?: CreateActorOptions,
 ): Promise<backendInterface> {
+  // Attempt to load mock backend if enabled
   const mock = await maybeLoadMockBackend();
   if (mock) {
     return mock;
